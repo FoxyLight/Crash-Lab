@@ -1,6 +1,6 @@
 # Architecture
 
-> Status: v0.9 implementation on `feature/impact-lab`, awaiting human acceptance and merge. Base: merged v0.8.1 (`9c0a242`). For detailed scene tuning, see [README](../README.md).
+> Status: merged v0.9 baseline `cb76c23`; v0.10 local multiplayer implemented on its feature branch, awaiting human acceptance/merge. See [README](../README.md).
 
 ## Runtime overview
 
@@ -8,6 +8,7 @@ Crash Lab is a Godot 4 / GDScript, scene-oriented, 3D vehicle-combat prototype. 
 
 - **Duel:** `scenes/duel.tscn` instantiates the arena, player and AI rival, chase camera, combat HUDs, match controller, scene-local sound observer, and three repair pickups.
 - **Training:** `scenes/main.tscn` instantiates the driving/range arena, player car, stationary turret, target dummy, camera, HUDs, sound observer, and a repair pickup.
+- **Local duel:** `scenes/local_duel.tscn` contains one arena, P1/P2 inherited player chassis, one router, match, pickups, impact observer and sound observer. `local_duel.gd` builds two camera/HUD views of the root World3D and one global result panel; it does not instance gameplay actors inside the views.
 - **Arenas:** `scenes/test_arena.tscn` provides lighting/environment; `scripts/arena.gd` creates training geometry. The duel overrides arena construction through `scripts/duel_arena.gd`.
 
 ## Main systems and ownership
@@ -23,6 +24,8 @@ Crash Lab is a Godot 4 / GDScript, scene-oriented, 3D vehicle-combat prototype. 
 | Duel lifecycle | `scripts/match/duel_match.gd` | Elimination accounting, completed-physics-tick scoring, win/draw/lose, match restart |
 | Audio and HUD | `scripts/audio/`, `scripts/debug/` | Scene-local signal observers, procedural cues, status and result presentation |
 | Camera | `scripts/camera/chase_camera.gd` | Smoothed rear-follow camera with basic static-world obstruction ray |
+| Local input | `scripts/multiplayer/local_input_router.gd`, `local_vehicle_input.gd` | Raw device-aware event routing, stable pad slots, neutral join/edge handling; supply the existing DriverInput contract |
+| Local presentation | `scripts/multiplayer/local_duel.gd`, `local_player_hud.gd` | Shared-world horizontal SubViewports, explicit per-player HUD references, midpoint listener and one shared result |
 | Collision telemetry | `scripts/vehicles/vehicle_impact.gd`, shared chassis `ImpactDetector` | Read rigid-body contact snapshots, coalesce contacts, classify speed, own episode history and optional bounded impulses |
 | Crash presentation | `scripts/effects/impact_feedback.gd`, `crash_sparks.gd` | Scene-local signal observer, bounded mesh bursts and involved-player camera dispatch; audio observes independently |
 
@@ -57,9 +60,21 @@ Observers bind scene-authored vehicles at startup. Dynamically spawning addition
 - Vehicle damage zones are separate from rigid-body collisions: layer 1 = world, layer 2 = vehicle bodies, layer 3 = projectile hurtbox areas (bit masks 1, 2, 4 respectively). Projectiles query all three; suspension rays currently query the world only.
 - Reusable scenes should not assume a single human player. Keep per-vehicle control and match-level lifecycle separate for future local multiplayer.
 
+## Local multiplayer ownership and lifecycle
+
+`local_input_router.gd` receives raw root `_input` events exactly once. It maps physical keys/mouse only to P1 in keyboard mode and JoypadMotion/JoypadButton by explicit noncontiguous device IDs. It never uses global action strengths. Hotplug calls `assign_devices(Input.get_connected_joypads())`, preserving still-connected slots and filling only empty ones. Assignment seeds actual device state, clears old edges and requires neutral before input joins. Key echoes/duplicate button presses cannot generate additional cycles or restarts. F2 selects a session-static setup; device slots/mute survive ordinary scene restart. Focus loss clears cached commands. This event/state layer has synthetic test seams for device inventories/events, not a claim of emulated hardware validation.
+
+`local_vehicle_input.gd` extends the original provider interface, runs before loadout/health processing and reads only its router slot. Existing player input and AI scripts remain unchanged. `local_player_car.tscn` inherits the full player loadout, substitutes this provider, hides the old root HUD, adds a nameplate and configures alternate spawn points. The local scene supplies explicit router references for each instance. New compact HUDs receive vehicle/match/router references rather than looking up Player/Rival names.
+
+Projectile ownership uses `damage_source: WeakRef`. Weapons attach their shooter; swept hits prefer `take_damage_from(amount, source)` on colliders/receivers, falling back to `take_damage(amount)` for legacy targets. Health records only the accepted lethal source and exposes `get_death_source()`, clearing it on confirmed respawn. No shared/global last-attacker registry. Local matches enable `require_damage_source`; credit is awarded only when the lethal source is the other participant. Self/unknown kills still respawn but give no points. The AI duel preserves legacy unattributed one-argument fixture behavior by default; attributed self/third-party kills never award the opponent. Completed-tick grouping, same-tick draws and per-life deduplication remain in the shared match controller.
+
+Health requests `prepare_respawn(allow_alternates)` after its countdown. The chassis chooses a clear primary or supported clear alternative and records a `respawn_target`; integration rechecks the destination, moves safely, clears momentum and increments `reset_generation`. Health restores controls/health/protection only after that generation is observed. Waiting candidates are revalidated every step; no space reservation or unsafe timeout teleport. Empty alternate lists preserve AI/training behavior. Match finish clears pending reset targets alongside other gameplay gates.
+
+Two SubViewportContainers sit in a root VBox and each shares the root `World3D`. They contain only a chase camera and CanvasLayer HUD; viewport input/audio listeners are disabled. The root has one AudioListener3D at the player midpoint and one CombatAudio observer (`shared_mix = true`). Both players receive the same shot/respawn rules; one result cue plays. The router owns shared restart/mute edges; match/audio consume them once. Crossed spark quads enable both cameras to see one simulated effect; original single-player geometry stays unchanged. Existing impact feedback finds both cameras and routes only involved-player shake. Results freeze both actors and clear shared projectiles/effects; reload rebuilds all scene-local references/signals.
+
 ## Known structural limits
 
-There is no local/online human multiplayer, environmental destruction, collision health damage, damage attribution for multi-party eliminations, or paid CI components. The public-only [Godot headless workflow](../.github/workflows/godot-headless.yml) includes impact tests; successful checks still require GitHub verification. Visual wheels and primitive chassis geometry are intentional prototypes. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
+No online networking, arbitrary multi-party/assist attribution, environment destruction, collision health damage or paid CI components. Local mode is two players with one horizontal layout and a shared speaker mix. Dynamic extra actors would need observer registration. The public-only workflow includes multiplayer checks; actual hosted results still require verification. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
 
 ## Documentation maintenance
 

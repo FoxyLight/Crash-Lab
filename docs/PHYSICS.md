@@ -1,6 +1,6 @@
 # Driving and physics
 
-> Implementation reference for v0.9 on its feature branch. Gameplay feel must be validated in interactive playtests; passing headless tests alone does not establish that driving is fun.
+> Merged v0.9 baseline `cb76c23`, retained for v0.10 local multiplayer. Gameplay feel must be validated in interactive playtests; passing headless tests alone does not establish that driving is fun.
 
 ## Physics baseline
 
@@ -83,7 +83,17 @@ API references verified during implementation: [PhysicsDirectBodyState3D](https:
 
 ## Recovery and respawn
 
-Manual reset and automatic fall recovery restore the recorded spawn transform and clear linear/angular velocity only when the destination is clear. Destroyed vehicles wait for an unoccupied spawn before healing/reenabling controls; there is currently **no fallback spawn**. The AI separately detects stuck movement and prolonged rollover and can request recovery.
+Manual reset and automatic fall recovery restore the recorded primary transform and clear momentum only when it is clear. Destroyed vehicles wait for a validated spawn before healing/reenabling controls. AI/training have empty alternative lists and retain their original primary-only behavior; local players have four alternatives. AI stuck/rollover recovery remains unchanged.
+
+## v0.10 shared physics and safe alternate spawning
+
+Two SubViewports share one root World3D/physics space at **120 Hz**, not two simulations. Both human cars retain the exact v0.9 mass, 22,000 N power, 55 m/s cutoff, steering/brakes/grip/suspension/damping, weapon tuning and camera settings. Physical collisions still deal no health damage. A local 55 m/s opposing collision emits one canonical event and stops both chassis with >4 m separation, routing shake to both cameras.
+
+Local `alternate_spawn_points` are four flat-arena corners at (±55, 1.25, ±55), searched in authored order; they retain the primary spawn's heading. Health waits **1.5 seconds after an occupied normal respawn countdown** before alternatives become eligible. At each physics step, try the primary first, then alternatives: physical chassis overlap query, mask 3, own RID excluded, 0.3 m margin; alternatives also require all four wheel-mount downward rays (2 m, world mask 1) to hit support with normal-up dot ≥0.7. The recorded candidate is rechecked inside integration immediately before moving. Health waits for a new `reset_generation` before restoration/protection/input. Re-evaluate blocked candidates rather than reserving a location that could become occupied. If every candidate is unsafe, defer and retry. This replaces spawn camping deadlock in the authored two-car local arena without unsafe teleporting.
+
+The manual reset API and v0.9 input/physics contract stay compatible. Alternate points are empty by default on the shared chassis; only the local player scene configures them. Projectiles gain weak shooter attribution through an optional source-aware damage method, without adding a physical collision force or health-damage path.
+
+Local sparks use two crossed quads per streak so the one simulated effect remains visible from both cameras. Colors, velocities, counts, durations, center and eight-burst cap are unchanged. Local major maximum: **1,728 streak vertices** across eight bursts plus their centers; single-player remains 864. No new effect instances or particle simulations are created per viewport. Split-screen sound has one root listener at the participants' midpoint; listeners in both render views are disabled.
 
 ## Tuning and regression procedure
 

@@ -1,8 +1,45 @@
-# Crash Lab v0.9 — Impact Lab
+# Crash Lab v0.10 — Local Multiplayer
+
+**Merged baseline:** v0.9 Impact Lab, `cb76c23`. v0.10 adds a separate two-human local duel on `feature/local-multiplayer`; human Windows/controller acceptance and merge are pending. All approved v0.9 driving, weapon, collision and camera settings are retained.
+
+## Two-player local duel
+
+Open **`scenes/local_duel.tscn` and press F6**. Or run `godot --path . res://scenes/local_duel.tscn`. F5 still launches the existing AI duel; F6 on `scenes/main.tscn` runs training. No mode menu or online networking is added.
+
+The top view follows orange **Player 1** and the bottom follows blue **Player 2**. There is one physical arena, two human-controlled shared chassis, three repair pads, and identical 100 HP, blaster/cannon loadouts, three-second respawn delay and 1.5-second spawn protection. Both views show their own health, damage flash, shield/respawn status, weapon/readiness, identity/speed, device status and score. One shared screen names PLAYER 1 WINS, PLAYER 2 WINS or DRAW.
+
+| Action | P1 default: keyboard + mouse | P2: first connected gamepad |
+| --- | --- | --- |
+| Accelerate | W | Right trigger |
+| Brake / reverse | S | Left trigger |
+| Steer | A / D | Left stick |
+| Handbrake | Space | South face / Xbox A |
+| Fire selected weapon | F / left mouse | Right shoulder / Xbox RB |
+| Cycle weapons | Q | North face / Xbox Y |
+| Select blaster / cannon | 1 / 2 | Cycle with Y |
+| Recover own vehicle | R | D-pad up |
+| Restart finished match | Enter (shared) | Start / Menu (shared) |
+| Mute session | M (shared) | D-pad down (shared) |
+
+Press **F2** to toggle **keyboard + one controller** / **two controllers**. In two-controller mode both use the gamepad column, with separate device assignments; keyboard driving is disabled. Setup and mute persist through match restart. At startup, connected pads fill slots in Godot device-ID order. A remaining player's pad keeps its slot when the other disconnects; the next available pad fills only the empty slot. Release sticks, triggers and buttons to neutral before a newly assigned/reconnected pad joins. A missing pad shows a clear message and zeroes its player's commands; the car can coast and the match continues. Keyboard Enter/M/F2 remain shared session controls in either setup. Cycling/restart uses fresh presses, not held-repeat events. Controller names/layout compatibility and hotplug still require actual Windows hardware testing.
+
+Local scoring credits only the **opponent who caused the accepted lethal hit**. Self-inflicted or unattributed/environmental destruction causes respawn without awarding the other player a point; there is no assist or stale-last-attacker credit. Same-physics-tick winning eliminations still draw. Weapon damage APIs remain compatible with existing one-argument callers; strict source attribution is enabled for local matches. The AI duel retains its historical fallback for legacy unattributed calls; normal weapon shots now carry their shooter in either mode.
+
+If the primary spawn is occupied after the normal countdown, a local player waits up to **1.5 more seconds** before trying four deterministic alternatives at **(±55, 1.25, ±55)**. P1 checks west/south first, P2 east/north first. Each candidate must pass a chassis clearance query and four ground-support checks; integration rechecks occupancy before moving. No firing/healing occurs until the reset is confirmed. If all candidates are blocked, the player waits safely and retries. With one opposing car and the authored arena, it cannot camp all separated spawns at once. Recovery with R/D-pad up remains a manual return to the primary spawn, without healing or scoring changes.
+
+Horizontal split uses two SubViewports sharing one World3D. Physics, projectiles, pickups and spark lifetimes run once; each view retains v0.9 chase tuning, 75–85° speed FOV and involved-player collision shake. Crossed streak geometry makes one spark burst visible from both viewpoints. One audio observer/listener mixes sounds from the players' midpoint through shared speakers, with session mute and no per-view duplicate cues.
+
+![Actual local-duel launch layout](docs/images/local-duel.png)
+
+**Validation:** all **326 behavior checks** (256 existing + 70 multiplayer) and the separate 60-second AI soak pass locally on Godot 4.7.2. Real Windows renders cover split layout, a shared 55 m/s head-on crash, protected respawn, resize and a controlled winner screen. [Testing and performance evidence](docs/TESTING.md#v010-local-multiplayer-validation) records measurements and CI reporting. Physical two-person controller playtesting is still required; no connected controllers were detected during automated inspection.
+
+**Limits and manual checks:** horizontal layout only; existing canvas/aspect scaling makes distant targets smaller at half height. No automatic pause, lobby, separate headphone mixes, assist scoring or networking. Local bindings are currently fixed in the raw router; Input Map rebinding still applies to the original single-player/training provider. If both pads disconnect, reconnection order fills the vacant slots anew. Test keyboard+pad and two pads, hotplug while holding controls, simultaneous driving/switching, full matches, spawn camping, high-speed aiming/camera comfort, audio/mute and resize. A brief render probe averaged ~5.5 ms/frame in one- and two-view scripted combat; this is not a performance guarantee. See [TESTING](docs/TESTING.md) for the setup and acceptance checklist.
+
+The earlier single-player and Impact Lab reference follows; its historical results describe their respective milestones.
 
 A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available.
 
-v0.9 adds physical collision telemetry, crash feedback and playtest refinements: more reliable event handling, thick moving sparks, stronger acceleration and modest speed-based FOV. Power is now **22,000 N**, with a **55 m/s power cutoff**. Mass, brakes, reverse cutoff, grip, suspension, damping, steering angles and their original 42 m/s fade reference remain intact, as do weapons, AI commands, health, scoring and repairs. Optional extra crash impulses default **off**. Physical collisions still cause **no health damage**. New feel/balance remains subject to human acceptance.
+v0.9 adds physical collision telemetry, crash feedback and playtest refinements: more reliable event handling, thick moving sparks, stronger acceleration and modest speed-based FOV. Power is now **22,000 N**, with a **55 m/s power cutoff**. Mass, brakes, reverse cutoff, grip, suspension, damping, steering angles and their original 42 m/s fade reference remain intact, as do weapons, AI commands, health, scoring and repairs. Optional extra crash impulses default **off**. Physical collisions still cause **no health damage**. These are the merged v0.9 settings; local multiplayer feel/balance remains subject to human acceptance.
 
 ## Documentation
 
@@ -270,7 +307,7 @@ For the refined v0.9, all **256 behavior checks** pass locally, including **19 d
 
 The **60-second default duel simulation** passes: the rival travels **149.65 m**, stays upright **7,200/7,200** frames, needs **zero resets**, fires **13 shots** and destroys the stationary player once, score **0–1**. The original-power observation was 235.26 m, 27 shots and two deaths; higher power changes the encounter trajectory even though AI commands and its 14 m/s desired speed are unchanged. Tests require stable movement, firing, destruction and consistent scoring, not an exact chase route. Balance/fairness still needs human testing.
 
-The user approved human playtests through v0.8. A graphical Windows v0.9 inspection captured an actual head-on collision with one visible spark burst and full health on both cars. A graphics stress probe reached the eight-burst cap, expired all bursts, and cleared bursts/shake at the result screen; training also loaded without reported runtime errors. These are presentation/lifecycle observations, not human driving or listening approval. Impact feel, audio balance and physical-controller playtests remain pending.
+v0.9 is now the merged baseline at cb76c23. A graphical Windows v0.9 inspection captured an actual head-on collision with one visible spark burst and full health on both cars. A graphics stress probe reached the eight-burst cap, expired all bursts, and cleared bursts/shake at the result screen; training also loaded without reported runtime errors. These are presentation/lifecycle observations, not human driving or listening approval. For v0.10, renewed two-person feel, audio balance and physical-controller checks remain pending.
 
 ### Human playtest checklist
 
@@ -293,4 +330,4 @@ The user approved human playtests through v0.8. A graphical Windows v0.9 inspect
 
 Suspension rays only contact static arena layer 1; tires are visual placeholders without rolling collision or wheel spin. There is no drivetrain/gearing simulation or advanced tire model. The player uses manual rollover recovery; the AI has a delayed recovery reset. The camera checks the desired chase line against the arena with a simple ray rather than a swept camera volume.
 
-Visual feedback remains simple geometry; audio is procedural placeholder synthesis. Projectiles use zero-width sweeps against current collider positions, and fire cadence is quantized to physics ticks. Dummy/turret respawn restores solid collision in place in training; non-final vehicle respawns wait for spawn clearance. Rival navigation remains local, with no pickup seeking. Repair pads query up to 32 body-shape overlaps per tick, sufficient for this two-car arena, and exact distance ties favor lexical scene paths. Pickups are fixed and their radius/repair/delay values are provisional; no ammo/armor/shield pickups, regeneration, inventory, random drops, AI weapon switching, progression, or multiplayer is added. Sound lacks wall occlusion and bounded pools can truncate older cues. Human tactical/balance and listening tests remain necessary.
+Visual feedback remains simple geometry; audio is procedural placeholder synthesis. Projectiles use zero-width sweeps against current collider positions, and fire cadence is quantized to physics ticks. Dummy/turret respawn restores solid collision in place in training; non-final vehicle respawns wait for spawn clearance. Rival navigation remains local, with no pickup seeking. Repair pads query up to 32 body-shape overlaps per tick, sufficient for this two-car arena, and exact distance ties favor lexical scene paths. Pickups are fixed and their radius/repair/delay values are provisional; no ammo/armor/shield pickups, regeneration, inventory, random drops, AI weapon switching or progression is added by the earlier milestones; v0.10 local multiplayer is documented above. Sound lacks wall occlusion and bounded pools can truncate older cues. Human tactical/balance and listening tests remain necessary.
