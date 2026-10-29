@@ -6,14 +6,15 @@
 
 Build a small, polished, original Windows vehicular-combat game with responsive arcade handling, convincing physical weight, memorable crashes, different tactical weapons, reactive arenas, and enjoyable two-human-player matches. Preserve the already-approved driving baseline as new systems are introduced.
 
-## Current baseline: v0.8 (implemented)
+## Current merged baseline: v0.8.1
 
 - Godot 4 / GDScript, one drivable muscle car with four-ray suspension and a chase camera.
 - Separate training arena and default duel against a moving AI rival.
 - Player blaster and heavy cannon, health/respawn, repair pickups, duel scoring, procedural audio.
 - Nine tracked automated test suites, runnable locally. Historical v0.8 README reports **192 passing behavior checks**; this is not a claim that every later branch has been tested.
 - Tracked architectural, design, physics, and testing documentation.
-- **v0.8.1 workflow proposed in a feature PR:** public-only Godot headless checks on a free standard runner with no artifacts/caches. Not declared complete until checks pass and the PR is merged.
+- **v0.8.1 implemented on main at `9c0a242`:** public-only Godot headless workflow on one free standard runner with no artifacts/caches. Prior wording that it was still proposed is superseded by the merged starting baseline. Current CI results must still be checked per commit.
+- **v0.9 under playtest refinement on `feature/impact-lab`, not accepted/merged:** fix weak-contact escalation, one-sided telemetry and distinct-collider suppression; improve spark visibility, shared acceleration/top speed and speed FOV. Extra crash impulses remain disabled. Local regression validation/documentation updated in the existing PR #12; renewed human Windows/controller acceptance is pending.
 
 ## Approved cost policy for future CI (mandatory)
 
@@ -34,7 +35,7 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | Version | Milestone | Deliverable | Acceptance gate |
 | --- | --- | --- | --- |
 | v0.8.1 | **Free development foundation** | One narrowly scoped, public-only CI workflow using a free standard runner; run existing headless Godot suites without artifacts/caches. | All existing suites run on an allowed runner; deliberate failure makes the check fail; no premium runner/storage action; local runner still works. |
-| v0.9 | **Impact Lab** | Impact telemetry, severity classification, restrained crash exaggeration, debris/sparks/audio, improved recovery. | Head-on, rear, side and glancing-impact regressions plus human confirmation that driving stays responsive. Keep collision damage initially optional/off. |
+| v0.9 | **Impact Lab** | Implemented on feature branch: telemetry, classification, restrained sparks/audio/camera, optional capped impulses, lifecycle-safe recovery. | Local head-on/rear/side/glancing regressions pass; require CI and human confirmation before merge. Collision health damage is excluded. |
 | v0.10 | **Multiplayer Lab** | Two independent local input providers; split-screen cameras/HUDs; two-human duel; scoring and safe spawn improvements. | Two people can finish and restart a match without input conflicts or unfair spawn/score errors. |
 | v0.11 | **Destruction Lab** | Breakable props, controlled debris, one meaningful arena hazard, performance bounds. | Driving/shots produce readable destruction; physics and frame pacing stay stable. |
 | v0.12 | **Vehicle identity** | Heavy pickup versus muscle car; distinct handling/ramming trade-offs; one signature ability per vehicle. | Human playtests establish meaningful, reasonably balanced choices. |
@@ -58,7 +59,8 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | v0.8 combat prototype | Implemented | Merged PRs [#1–#8](https://github.com/FoxyLight/Crash-Lab/pulls?q=is%3Apr+is%3Amerged) |
 | Repository documentation foundation | Implemented | [PR #9](https://github.com/FoxyLight/Crash-Lab/pull/9) |
 | Free-only CI policy | Approved and documented | This file and [TESTING](TESTING.md) |
-| v0.8.1 headless CI implementation | In review; not yet accepted | [Workflow](../.github/workflows/godot-headless.yml); must pass on GitHub and be merged |
-| v0.9 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
+| v0.8.1 headless CI implementation | Implemented on merged main | Commit `9c0a242`; [workflow](../.github/workflows/godot-headless.yml) |
+| v0.9 Impact Lab | Refinements implemented; renewed human acceptance/merge pending | Existing [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), 256 local behavior checks + 60 s soak, current PR checks, [validation](TESTING.md#v09-playtest-refinement-validation) and before/after screenshots |
+| v0.10 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
 
 When a milestone is merged, update status and evidence here in the same PR; distinguish planned, in progress, tested, and merged.

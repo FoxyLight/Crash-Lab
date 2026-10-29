@@ -34,6 +34,8 @@ func _ready() -> void:
 		add_child(voice)
 		ui_voices.append(voice)
 	for node in get_parent().find_children("*", "", true, false):
+		if node.has_signal("impact_detected"):
+			node.impact_detected.connect(_on_crash)
 		if node.has_signal("collected") and node.has_method("try_collect"):
 			node.collected.connect(_on_repair_collected)
 		if node.has_signal("shot_fired") and node.has_signal("projectile_impacted"):
@@ -132,6 +134,10 @@ func _on_impact(location: Vector3) -> void:
 	if impact_cooldown <= 0.0:
 		play_cue(&"impact", location)
 		impact_cooldown = 0.04
+
+func _on_crash(data: Dictionary) -> void:
+	var cue: StringName = {1: &"crash_minor", 2: &"crash_moderate", 3: &"crash_major"}.get(data.severity, &"crash_minor")
+	play_cue(cue, data.position)
 
 func _on_health_changed(health: float, _maximum: float, receiver: Node, actor: Node3D) -> void:
 	var id := receiver.get_instance_id()

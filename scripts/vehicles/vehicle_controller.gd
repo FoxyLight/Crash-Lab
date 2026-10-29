@@ -2,13 +2,14 @@ extends RigidBody3D
 @export var body_color: Color = Color("d85828")
 ## Forces act at four tire contacts; only recovery replaces the body transform.
 @export_group("Powertrain")
-@export var engine_force: float = 15000.0
+@export var engine_force: float = 22000.0
 @export var brake_force: float = 24000.0
-@export var maximum_speed: float = 42.0 # m/s, about 151 km/h
+@export var maximum_speed: float = 55.0 # m/s power cutoff, about 198 km/h
 @export var reverse_speed: float = 13.0
 @export_group("Handling")
 @export var steering_angle: float = 0.52
 @export var high_speed_steering_angle: float = 0.20
+@export var steering_speed_reference: float = 42.0 # Preserve the approved steering fade independently of power.
 @export var steering_response: float = 6.0
 @export var lateral_traction: float = 8.0
 @export_range(0.05, 1.0) var handbrake_grip: float = 0.22
@@ -28,6 +29,9 @@ extends RigidBody3D
 @onready var driver = $DriverInput
 var grounded_wheels: int = 0
 var signed_speed: float = 0.0
+var drive_force_requested: float = 0.0 # Contact-force telemetry, N, not another force.
+var drive_force_applied: float = 0.0
+var effective_linear_damping: float = 0.0
 var current_steering: float = 0.0
 var spawn_transform: Transform3D
 var reset_generation: int = 0
@@ -38,6 +42,7 @@ var wheel_lengths: Array[float] = [0.65, 0.65, 0.65, 0.65]
 
 func finish_combat() -> void:
 	combat_active = false
+	$ImpactDetector.reset_tracking()
 	driver.stop_commands()
 	$DamageReceiver.finish_combat()
 	var loadout = get_node_or_null("Loadout")
@@ -80,14 +85,20 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		state.angular_velocity = Vector3.ZERO
 		current_steering = 0.0
 		reset_generation += 1
+		$ImpactDetector.reset_tracking()
 		return
+	$ImpactDetector.sample(state)
 	var basis := state.transform.basis
 	var forward := -basis.z
 	signed_speed = state.linear_velocity.dot(forward)
 	var speed_ratio := clampf(absf(signed_speed) / maximum_speed, 0.0, 1.0)
-	var angle := lerpf(steering_angle, high_speed_steering_angle, speed_ratio)
+	var steering_ratio := clampf(absf(signed_speed) / maxf(1.0, steering_speed_reference), 0.0, 1.0)
+	var angle := lerpf(steering_angle, high_speed_steering_angle, steering_ratio)
 	current_steering = move_toward(current_steering, -driver.steering * angle, steering_response * state.step)
 	grounded_wheels = 0
+	drive_force_requested = 0.0
+	drive_force_applied = 0.0
+	effective_linear_damping = state.total_linear_damp
 	for i in wheel_mounts.size():
 		var mount := state.transform * wheel_mounts[i]
 		var query := PhysicsRayQueryParameters3D.create(mount, mount - basis.y * (suspension_length + wheel_radius + 0.25), 1, [get_rid()])
@@ -120,6 +131,8 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 			longitudinal += clampf(-velocity.dot(tire_forward) * vehicle_mass / 4.0 / state.step, -brake_force / 2.0, brake_force / 2.0)
 		# Limit the combined contact force to available suspension load.
 		var tire_force := (tire_right * lateral + tire_forward * longitudinal).limit_length(spring * 1.8)
+		drive_force_requested += longitudinal
+		drive_force_applied += tire_force.dot(tire_forward)
 		state.apply_force(tire_force, offset)
 
 func _process(_delta: float) -> void:

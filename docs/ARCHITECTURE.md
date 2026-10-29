@@ -1,6 +1,6 @@
 # Architecture
 
-> Status: tracks the implemented v0.8 prototype on `main`. Update this document in the same PR as architecture changes. For detailed scene tuning, see [README](../README.md).
+> Status: v0.9 implementation on `feature/impact-lab`, awaiting human acceptance and merge. Base: merged v0.8.1 (`9c0a242`). For detailed scene tuning, see [README](../README.md).
 
 ## Runtime overview
 
@@ -23,6 +23,8 @@ Crash Lab is a Godot 4 / GDScript, scene-oriented, 3D vehicle-combat prototype. 
 | Duel lifecycle | `scripts/match/duel_match.gd` | Elimination accounting, completed-physics-tick scoring, win/draw/lose, match restart |
 | Audio and HUD | `scripts/audio/`, `scripts/debug/` | Scene-local signal observers, procedural cues, status and result presentation |
 | Camera | `scripts/camera/chase_camera.gd` | Smoothed rear-follow camera with basic static-world obstruction ray |
+| Collision telemetry | `scripts/vehicles/vehicle_impact.gd`, shared chassis `ImpactDetector` | Read rigid-body contact snapshots, coalesce contacts, classify speed, own episode history and optional bounded impulses |
+| Crash presentation | `scripts/effects/impact_feedback.gd`, `crash_sparks.gd` | Scene-local signal observer, bounded mesh bursts and involved-player camera dispatch; audio observes independently |
 
 ## Data flow
 
@@ -32,6 +34,20 @@ Crash Lab is a Godot 4 / GDScript, scene-oriented, 3D vehicle-combat prototype. 
 4. **DamageReceiver** updates health and emits signals. **MatchController**, audio, and HUDs observe appropriate events without owning vehicle motion.
 5. **RepairPickup** checks actual nearby physical bodies for a living damaged `DamageReceiver`, calls `restore_health()`, and emits `collected`.
 6. A finished duel calls each participant's `finish_combat()` gate, disables further gameplay events, and permits explicit scene restart.
+
+## Impact ownership and interface
+
+The chassis calls its child `ImpactDetector.sample(state)` inside `_integrate_forces`, after the recovery gate and before suspension forces. The component reads supported contact APIs, never keyboard/controller actions. `impact_detected(Dictionary)` carries `vehicle`, `collider`, world `position`, world `normal`, world `relative_velocity`, `closing_speed` (m/s), `severity` (0 none, 1 minor, 2 moderate, 3 major), `type` (`vehicle` or `arena`) and physics `tick`. One strongest contact per collider is considered each tick. Episode history retains IDs/timestamps, not physics-state objects. Pending dispatch is bounded to eight events and occurs in the component's physics process outside force integration.
+
+For two instrumented vehicles, **either reporter** forwards normalized contact data to the lower-ID owner's `observe_contact(data)`. `mirrored(data)` swaps participants/contact positions and negates world normal and relative velocity. The owner maintains one episode per collider: last contact time, highest accepted severity and last dispatch time. Stronger categories can upgrade, weaker/same categories cannot repeat. `event_interval` delays upgrades within a pair; it no longer drops distinct colliders. The bounded pending queue coalesces reports for the same collider to the strongest category. This handles missing contact data on either chassis without duplicate pair presentation. No global/static registry survives restart.
+
+When a canonical major event dispatches, each enabled participant receives a bounded `pending_reactions` entry. Each chassis consumes its own reaction during its next `sample(state)`, before reading contacts; lifecycle is rechecked. This keeps all impulse application in the owning force callback and suppresses mirrored duplicates, including during escalation. Extra reactions remain disabled by default. `last_impact`, `event_count`, structured debug output and chassis force telemetry support inspection.
+
+Health destruction/respawn and chassis recovery/finish call `reset_tracking()`. Components in the scene's `vehicle_impacts` group also `forget_vehicle(actor)` to cancel that actor's episode, event and reaction on the canonical counterpart. Dispatch rechecks both participants and collider validity. `ImpactFeedback` owns the burst budget and presentation-only `spark_origin(data)` projection above placeholder bodywork. `crash_sparks.gd` owns bounded moving/fading camera-facing triangle streaks and a center mesh. `CombatAudio` independently maps severity to cached cues in existing voice pools. `ChaseCamera` owns crash offsets and speed-dependent FOV; original follow/obstruction logic stays intact. Results clear shake and remove all `combat_effects`; restart rebuilds scene-local observers.
+
+The shared chassis now separates power cutoff from `steering_speed_reference`, preserving the previous steering fade despite higher power. `drive_force_requested`, `drive_force_applied` and `effective_linear_damping` are read-only measurements inside integration, not new forces. The rival still supplies ordinary throttle/brake commands against its existing desired speed; no higher AI speed or stronger enemy weapon is introduced.
+
+Observers bind scene-authored vehicles at startup. Dynamically spawning additional vehicle actors is outside this two-vehicle milestone and would need explicit observer registration.
 
 ## Interfaces to preserve
 
@@ -43,7 +59,7 @@ Crash Lab is a Godot 4 / GDScript, scene-oriented, 3D vehicle-combat prototype. 
 
 ## Known structural limits
 
-There is no local/online human multiplayer, environmental destruction system, impact-severity mechanic, damage attribution for multi-party eliminations, or paid CI components. The proposed public-only [Godot headless CI workflow](../.github/workflows/godot-headless.yml) runs existing tests; successful checks still require GitHub verification. Riderless visual wheels and primitive chassis geometry are intentional prototypes. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
+There is no local/online human multiplayer, environmental destruction, collision health damage, damage attribution for multi-party eliminations, or paid CI components. The public-only [Godot headless workflow](../.github/workflows/godot-headless.yml) includes impact tests; successful checks still require GitHub verification. Visual wheels and primitive chassis geometry are intentional prototypes. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
 
 ## Documentation maintenance
 
