@@ -15,7 +15,7 @@ function Invoke-CheckedGodot {
 
 Invoke-CheckedGodot -EngineArguments @('--headless', '--path', $projectRoot, '--editor', '--quit')
 Invoke-CheckedGodot -EngineArguments @('--headless', '--path', $projectRoot, '--quit-after', '180')
-foreach ($suite in @('driving_smoke', 'weapon_smoke', 'combat_smoke', 'rival_smoke', 'rival_soak')) {
+foreach ($suite in @('driving_smoke', 'weapon_smoke', 'combat_smoke', 'rival_smoke', 'rival_soak', 'match_smoke')) {
     Invoke-CheckedGodot -EngineArguments @('--headless', '--path', $projectRoot, '--fixed-fps', '120', '--script', "res://tests/$suite.gd")
 }
 Write-Output 'All validation suites passed without Godot runtime errors.'

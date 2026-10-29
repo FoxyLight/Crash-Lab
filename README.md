@@ -1,13 +1,14 @@
-# Crash Lab v0.4
+# Crash Lab v0.5
 
-A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a repeatable duel against one blue moving rival. Both vehicles drive through the same rigid-body chassis, exchange projectile fire, collide physically, and respawn after destruction. The original training playground remains available. Multiplayer, detailed damage, progression, and environmental destruction are outside this prototype.
+A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available. Approved driving, camera, player weapon, and rival AI settings are preserved.
 
 ## Run
 
 1. Open `project.godot` with Godot 4.7.2 (the version validated for this prototype).
-2. Press **F5** to launch `scenes/duel.tscn`. Drive, dodge the blue rival's orange shots, and line up your forward blaster. Player health is at the bottom left; rival health/state is at the top right and above the car.
+2. Press **F5** to launch `scenes/duel.tscn`. Drive, dodge the blue rival's orange shots, and line up your forward blaster. Scores and the elimination target appear at the top center, player health at the bottom left, and rival health/state at the top right and above the car.
 3. The player starts at (-22, 1.25, 28), and the rival at (22, 1.25, -28). Solid boundaries and three spaced cover blocks provide maneuvering room. There is no active turret in the duel.
 4. To revisit training, open `scenes/main.tscn` and press **F6**. The original runway, slalom, ramps, target dummy, and northeast turret remain there. The right-side firing range is centered on x = 48; the turret is at (40, 0, -103).
+5. After a result, press **Enter** or **controller Start/Menu** to play again. Release the button before another deliberate restart press. R/D-pad remains vehicle recovery during play and never resets scores or restores health.
 
 No external assets, plugins, or downloads are required. The project uses the Compatibility renderer and Godot Physics at 120 physics ticks per second. Earlier Godot 4 versions have not been validated.
 
@@ -19,8 +20,27 @@ No external assets, plugins, or downloads are required. The project uses the Com
 | Handbrake | Space | South face button (Xbox A) |
 | Reset to starting position | R | D-pad up |
 | Hold to fire blaster | Left mouse button or F | Right shoulder (Xbox RB) |
+| Restart finished match | Enter | Start / Menu |
 
 Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are editable in **Project Settings → Input Map**. Opposite pedal input brakes before changing direction. Releasing the pedals allows the car to coast.
+
+## Match rules and lifecycle
+
+A fresh duel automatically starts **Playing**, with scores at zero. Destroying the rival awards one player elimination; destroying the player awards one rival elimination. Each destruction is credited once until that vehicle respawns. The first participant to reach **three** wins. Change **Duel → MatchController → Elimination Target** to configure the target. It is a scene setting; save it before launching if it should persist across restarts.
+
+Eliminations are grouped by the physics tick in which destruction signals occur. At the next physics boundary the controller resolves the completed tick as a batch, regardless of callback order. Both valid eliminations receive points. If both reach the target in that tick, the result is **Draw**; if only one reaches it, that participant wins. A result normally appears within one 120 Hz physics step of the decisive destruction. There are no rounds or match timer.
+
+Non-final eliminations retain existing destruction countdowns, safe spawn checks, and spawn protection. At the winning elimination, the match becomes **Finished** and shows **Victory**, **Defeat**, or **Draw**, final scores, and restart controls. Both cars freeze in place with zero momentum. Damage is rejected, health timers stop, pending respawns and recovery resets are cancelled, input providers stop, and weapons reject firing. Existing projectiles and muzzle/impact flashes are removed. The camera and arena remain visible behind the result overlay. The physics tree is not globally paused, so restart input remains available.
+
+Restart reloads the duel scene: scores, health, vehicles, AI state, cooldowns, effects, signal connections, and the result display are rebuilt. Both cars return to their original clear starting positions with the original initial protection state (no initial shield; protection still applies after ordinary respawns). Held physical driving inputs can naturally become active again in the new match. Restart works only while Finished, only once per request, and requires release after a reload to avoid a held key skipping a later result.
+
+Match rules are local to `duel.tscn`. Training has no match controller, scoring, or result gate and continues to respawn practice actors indefinitely.
+
+### Architecture
+
+`scripts/match/duel_match.gd` owns scoring, completed-tick event batches, Playing/Finished state, result, and restart. It connects to health destruction/respawn signals rather than polling zero health. `scripts/debug/match_hud.gd` observes score/result signals and owns their presentation.
+
+On completion the controller calls the participants' explicit `finish_combat()` hook. Vehicle, health, input, and weapon components stop their own responsibilities; health and weapons retain durable guards against further damage, processing, or direct firing calls. The chassis integration path also ignores reset/force work after completion. Training never invokes these hooks. No global match singleton or global pause is introduced. Driving forces, geometry, collision masks, camera settings, projectile tuning, AI logic, and input bindings from v0.4 are unchanged apart from the new restart action.
 
 ## Structure
 
@@ -45,7 +65,9 @@ Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are 
 - `scripts/combat/vehicle_hurtbox.gd`: projectile-only area covering the visible body/roof, without changing the physical chassis.
 - `scripts/debug/rival_hud.gd`: duel controls, rival name/health/state, and floating nameplate.
 - `tests/rival_smoke.gd`, `rival_soak.gd`: deterministic duel checks and a one-minute unattended encounter.
-- `tests/run_checks.ps1`: editor/startup validation and all five suites; also rejects Godot runtime errors even when the engine exits with code zero.
+- `scripts/match/duel_match.gd`, `scripts/debug/match_hud.gd`: duel scoring, result lifecycle, keyboard/controller restart, and match UI.
+- `tests/match_smoke.gd`, `tests/fixtures/tick_damage.gd`: match/restart checks, including real damage callbacks before and after the controller in one physics tick.
+- `tests/run_checks.ps1`: editor/startup validation and all six suites; also rejects Godot runtime errors even when the engine exits with code zero.
 
 ## Rival behavior and tuning
 
@@ -104,30 +126,31 @@ godot --headless --path . --fixed-fps 120 --script res://tests/weapon_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/combat_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/rival_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/rival_soak.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/match_smoke.gd
 ```
 
 On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
 
 Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
 
-For v0.4, all **73 behavior checks** pass: 10 original driving, 18 weapon, 17 turret/player combat, and 28 new rival checks. The new checks verify launch/training scene composition, physical patrol movement/turning, no unnecessary resets while moving, pursuit/fire gates, cover, both vehicles taking projectile damage, shooter body/area exclusion, player and rival spawn occupancy, disabled destroyed commands, restored AI state, delayed reverse/reset/rollover recovery, physical car contacts without health loss, defeat through the mounted player blaster, and resumed combat after rival respawn. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
+For v0.5, all **102 behavior checks** pass: the original 73 driving/weapon/combat/rival checks plus 29 match checks. Match checks cover fresh state/objective, ignored restart during play, no healing/scoring via manual recovery, scoring once per destruction, non-final respawns, victory/defeat at configurable targets, final projectile/effect cleanup, persistent control/damage/respawn/reset shutdown, actual Enter and controller Start input events, clean scene reloads, held-button protection, repeated reloads without duplicate connections, order-independent simultaneous destruction/draws across physics priorities, and continuous training respawns. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
 
-The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns. This checks the default setup without requiring an exact chase trajectory. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
+The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns, producing a 0–2 score. It verifies score/state consistency in addition to the original movement and stability criteria; the default encounter remains Playing at 60 seconds. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
 
-The user approved human playtests through v0.3. A graphical Windows launch of v0.4 rendered the moving blue rival, player, cover, health, floating nameplate, controls, and rival pursuit state. Automated inputs and fixed-step fixtures verify the new behavior. Human v0.4 keyboard/controller chase, dodging, difficulty, obstacle recovery, and repeat combat playtests remain pending.
+The user approved human playtests through v0.4. A graphical Windows launch of v0.5 was used to inspect the live score/objective, victory, defeat, draw, and fresh match after scene restart. The arena remains visible and the result/restart text is readable. Synthetic keyboard/controller events verify mapped restart behavior, but physical controller testing and human evaluation of full-match pacing and replay appeal remain pending. Automated checks do not establish a compelling match loop.
 
 ### Human playtest checklist
 
-- Chase and dodge the blue rival; assess whether pursuit creates opportunities for forward shots.
-- Use cover and distance, then watch it patrol and reacquire you without getting stuck or repeatedly resetting.
-- Destroy the rival and fight it again after respawn with keyboard/mouse and a controller.
-- Let the rival destroy you; verify full-health return, working controls, protection, and renewed combat.
-- Park on a vehicle's spawn during its countdown: it should wait rather than overlap.
-- Collide with the rival; confirm physical weight without health loss and unchanged player handling.
-- Reopen the training scene with F6 and check the previous courses and turret.
+- Play a complete first-to-three match; follow both scores during movement and eliminations.
+- Confirm each elimination scores once and non-final deaths resume combat normally.
+- Win and lose a match; check that results appear clearly and combat/respawns remain stopped.
+- Restart with Enter and a physical controller's Start/Menu button, including repeated matches and a held button.
+- Confirm full health, original spawns, fresh scores, working controls, and preserved driving/combat feel after restart.
+- Reopen training with F6 and check its continuous practice behavior.
+- Assess whether finishing a duel makes you want to play another.
 
 ### Known limits
 
 Suspension rays only contact static arena layer 1; tires are visual placeholders without rolling collision or wheel spin. There is no drivetrain/gearing simulation or advanced tire model. The player uses manual rollover recovery; the AI has a delayed recovery reset. The camera checks the desired chase line against the arena with a simple ray rather than a swept camera volume.
 
-Weapon feedback is simple geometry without audio. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks, with at most one shot per tick. Dummy/turret respawn still restores solid collision in place in training; move away from their footprints. Vehicles wait indefinitely for their spawn to clear. Projectile nodes and flashes are short lived rather than pooled. Rival navigation is deliberately local: a waypoint loop, visibility, short obstacle rays, and recovery; it cannot plan around a maze or predict player movement. It may back away or lose contact behind cover. No armor, collision damage, deformation, score, rounds, progression, or new weapons are included. Human combat feel requires hands-on review.
+Weapon feedback is simple geometry without audio. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks, with at most one shot per tick. Dummy/turret respawn still restores solid collision in place in training; move away from their footprints. Non-final vehicle respawns wait indefinitely for spawn clearance. Projectile nodes and flashes are short lived rather than pooled. Rival navigation is local rather than a maze planner. Match scores are in-memory only; restart reloads the scene and no statistics are saved. The scene deliberately freezes participants after a result. No timer, rounds, main menu, pause system, pickups, armor, collision damage, deformation, progression, additional enemies, or new weapons are included. Human match-loop testing remains necessary.

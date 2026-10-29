@@ -31,9 +31,19 @@ var signed_speed: float = 0.0
 var current_steering: float = 0.0
 var spawn_transform: Transform3D
 var reset_generation: int = 0
+var combat_active: bool = true
 var wheel_mounts: Array[Vector3] = [Vector3(-0.88, 0, -1.35), Vector3(0.88, 0, -1.35), Vector3(-0.88, 0, 1.25), Vector3(0.88, 0, 1.25)]
 var wheels: Array[Node3D] = []
 var wheel_lengths: Array[float] = [0.65, 0.65, 0.65, 0.65]
+
+func finish_combat() -> void:
+	combat_active = false
+	driver.stop_commands()
+	$DamageReceiver.finish_combat()
+	$Blaster.stop_firing()
+	linear_velocity = Vector3.ZERO
+	angular_velocity = Vector3.ZERO
+	freeze = true
 
 func is_spawn_clear() -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
@@ -55,6 +65,8 @@ func _ready() -> void:
 	_build_visuals()
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
+	if not combat_active:
+		return
 	if (driver.reset_requested or state.transform.origin.y < fall_reset_height) and is_spawn_clear():
 		driver.reset_requested = false
 		var recovery := spawn_transform

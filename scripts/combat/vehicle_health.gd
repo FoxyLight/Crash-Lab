@@ -14,10 +14,18 @@ var protection_remaining: float = 0.0
 var hit_remaining: float = 0.0
 var waiting_for_spawn: bool = false
 var pending_reset_generation: int = -1
+var combat_active: bool = true
 @onready var vehicle: RigidBody3D = get_parent()
 @onready var driver = vehicle.get_node("DriverInput")
 var meshes: Array[MeshInstance3D] = []
 var tint: StandardMaterial3D
+
+func finish_combat() -> void:
+	combat_active = false
+	respawn_remaining = 0.0
+	pending_reset_generation = -1
+	waiting_for_spawn = false
+	set_physics_process(false)
 
 func _ready() -> void:
 	process_physics_priority = -10
@@ -32,7 +40,7 @@ func _collect_meshes() -> void:
 		meshes.append(node)
 
 func take_damage(amount: float) -> void:
-	if is_destroyed or protection_remaining > 0.0 or amount <= 0.0:
+	if not combat_active or is_destroyed or protection_remaining > 0.0 or amount <= 0.0:
 		return
 	health = maxf(0.0, health - amount)
 	hit_remaining = 0.15
@@ -48,6 +56,8 @@ func take_damage(amount: float) -> void:
 		destroyed.emit()
 
 func _physics_process(delta: float) -> void:
+	if not combat_active:
+		return
 	hit_remaining = maxf(0.0, hit_remaining - delta)
 	protection_remaining = maxf(0.0, protection_remaining - delta)
 	if is_destroyed:
