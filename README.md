@@ -8,6 +8,7 @@ v0.8 adds fixed respawning repair pickups for player and rival. Both player weap
 
 The tracked project documentation lives in this repository. Keep relevant documentation and the changelog updated in the **same pull request** as each code change.
 
+- [Roadmap](docs/ROADMAP.md): development milestones and free-only GitHub Actions policy.
 - [Architecture](docs/ARCHITECTURE.md): runtime systems, ownership, integration contracts.
 - [Game design](docs/GAME_DESIGN.md): design pillars, implemented features versus experiments.
 - [Physics](docs/PHYSICS.md): driving model, tuning defaults, collisions, recovery.

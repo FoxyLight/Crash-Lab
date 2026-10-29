@@ -36,5 +36,6 @@ If a documentation file truly does not need changes, explain why here rather tha
 - [ ] Relevant automated and manual tests were completed, or blockers are documented.
 - [ ] Documentation and changelog are included in this PR.
 - [ ] No secrets or machine-specific absolute paths were committed.
+- [ ] If GitHub Actions is touched: free public-repository **standard** runners only; no premium/paid runners, uploaded artifacts, workflow caches, or third-party paid services; private-repository job guard verified (or explain why not applicable).
 
 > Project policy: documentation changes belong in the same PR as code changes. This template is a review checklist; automated enforcement can be added later.

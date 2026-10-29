@@ -4,6 +4,12 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 
 ## Unreleased
 
+### Development roadmap and cost guardrails
+- Track the proposed v0.8.1–v0.13 milestone sequence in `docs/ROADMAP.md`.
+- Approve only free standard GitHub-hosted runners on the public repository; prohibit premium/paid runners, artifact uploads, and workflow caches.
+- Document the private-repository fail-closed requirement and local Godot testing fallback.
+- **No CI workflow configured** as part of these documentation changes.
+
 ### Documentation foundation
 - Add tracked architecture, game-design, physics, and testing references under `docs/`.
 - Add a pull request template that requires documentation impact and test reporting.

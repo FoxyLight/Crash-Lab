@@ -47,10 +47,21 @@ The v0.8 README **reports** 192 passing behavior checks and separate duel-soak r
 - [ ] Verify test arena and duel arena both still work.
 - [ ] Watch for script/runtime errors and frame-time regressions.
 
+## Future GitHub Actions policy: free standard runners only
+
+**Approved constraint, not yet implemented.** The project may add GitHub Actions only for **public-repository jobs using free standard GitHub-hosted runners** (for example `ubuntu-24.04` or `windows-2025`). Larger, premium, GPU, and paid runners are prohibited. Do not configure paid integrations or external CI.
+
+- No `actions/upload-artifact`, `actions/cache`, package publication, or any other workflow artifact/cache storage. Inspect ordinary job logs and exit codes instead. GitHub retains workflow logs and check results under its retention settings; those are not optional artifact uploads.
+- Every future hosted test job must **skip when the repository is private** (for example, with job-level `if: ${{ github.event.repository.private == false }}`). If the repository becomes private, disable CI and use local testing until costs are explicitly revisited.
+- Use read-only job permissions, bounded timeouts, targeted triggers, and cancellation of duplicate runs. Review GitHub's official billing/runners documentation before implementation or any cost-related workflow edit.
+- Keep the existing Windows `tests/run_checks.ps1` working. If free CI cannot be verified, run tests locally rather than risk billing.
+
+See [ROADMAP](ROADMAP.md) for the binding project cost constraint and proposed v0.8.1 acceptance criteria. **No workflow was added by this documentation change.**
+
 ## Pull request testing requirements
 
 Every change should state: **engine version**, **commands run**, **automated outcomes**, **manual scenarios**, **what could not be tested**, and **known limitations**. Attach screenshots or short clips for visible behavior when helpful. Do not use headless passing to claim human play-feel or audio quality.
 
-For changes involving timing/physics, add deterministic regression scenarios where practical. For lifecycle changes, check repeated restarts and stale signal connections. New scripts should enter `tests/run_checks.ps1` when runnable. Introduce CI when available, without replacing manual playtesting.
+For changes involving timing/physics, add deterministic regression scenarios where practical. For lifecycle changes, check repeated restarts and stale signal connections. New scripts should enter `tests/run_checks.ps1` when runnable. Introduce CI only under the [approved free-only policy](ROADMAP.md#approved-cost-policy-for-future-ci-mandatory), without replacing manual playtesting.
 
 See [PR template](../.github/PULL_REQUEST_TEMPLATE.md) and [ARCHITECTURE](ARCHITECTURE.md).
