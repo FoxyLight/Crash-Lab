@@ -1,6 +1,8 @@
-# Crash Lab v0.5
+# Crash Lab v0.6
 
 A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available. Approved driving, camera, player weapon, and rival AI settings are preserved.
+
+v0.6 adds procedural combat audio: distinct player/enemy shots, world impacts, accepted damage, destruction, respawn, and victory/defeat/draw cues. It does not change the approved combat balance or match rules.
 
 ## Run
 
@@ -9,6 +11,7 @@ A small Godot 4 arcade vehicle combat playground for Windows PC. The default mod
 3. The player starts at (-22, 1.25, 28), and the rival at (22, 1.25, -28). Solid boundaries and three spaced cover blocks provide maneuvering room. There is no active turret in the duel.
 4. To revisit training, open `scenes/main.tscn` and press **F6**. The original runway, slalom, ramps, target dummy, and northeast turret remain there. The right-side firing range is centered on x = 48; the turret is at (40, 0, -103).
 5. After a result, press **Enter** or **controller Start/Menu** to play again. Release the button before another deliberate restart press. R/D-pad remains vehicle recovery during play and never resets scores or restores health.
+6. Use your normal Windows sound output. Press **M** or **D-pad down** to mute/unmute at any time, including the result screen. Audio status is shown at the bottom right; mute persists across scene restarts until the app closes.
 
 No external assets, plugins, or downloads are required. The project uses the Compatibility renderer and Godot Physics at 120 physics ticks per second. Earlier Godot 4 versions have not been validated.
 
@@ -21,8 +24,30 @@ No external assets, plugins, or downloads are required. The project uses the Com
 | Reset to starting position | R | D-pad up |
 | Hold to fire blaster | Left mouse button or F | Right shoulder (Xbox RB) |
 | Restart finished match | Enter | Start / Menu |
+| Mute / unmute audio | M | D-pad down |
 
 Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are editable in **Project Settings → Input Map**. Opposite pedal input brakes before changing direction. Releasing the pedals allows the car to coast.
+
+## Combat audio
+
+The same scene-local audio observer serves both duel and training. Existing weapon, health, and match signals trigger sound; projectiles now report collision positions through their firing weapon. Audio never changes damage, cadence, movement, scoring, or AI, and synthesis uses its own seeded RNG rather than gameplay randomness.
+
+| Event | Feedback |
+| --- | --- |
+| Player shot | Bright descending blaster sound at the muzzle |
+| Rival/turret shot | Lower pitched blaster sound at the muzzle |
+| Projectile collision | Short world impact; missed shots expire silently |
+| Accepted opponent/target damage | World hit sound at the damaged actor |
+| Accepted player damage | Centered damage cue |
+| Destruction | World destruction burst |
+| Respawn | World cue for other actors; centered cue for the player |
+| Victory / Defeat / Draw | Three distinct centered result phrases |
+
+Protected/rejected damage does not trigger a damage cue, and healing does not create false hit feedback. Muzzle and impact flashes remain as before. Match completion stops combat sounds and plays its result cue once; late combat cues are blocked until restart. Muting stops current voices immediately and suppresses new playback without changing gameplay. Unmuting does not replay an old result.
+
+Select **CombatAudio** in either scene to tune startup **Volume Db** (default -16 dB), **World Voice Limit** (12), and **UI Voice Limit** (3). Restart after changing startup settings. Spatial sounds use distance attenuation with a 100 m cutoff and a close-range gain cap. Impact bursts are limited to one cue per 0.04 seconds. Pools reuse existing players and replace the oldest slot when full; there is no unbounded node allocation during sustained fire.
+
+`sound_bank.gd` generates ten original mono 22,050 Hz, 16-bit PCM cues with short envelopes, controlled sample peaks, and no external assets. Streams are cached once per app session. These are intentionally simple synthesized placeholders. There is no music, engine loop, tire/collision audio, acoustic occlusion, or volume/settings menu in this milestone. Perceived loudness, positioning, fatigue, and cue quality need human listening on speakers/headphones.
 
 ## Match rules and lifecycle
 
@@ -67,7 +92,9 @@ On completion the controller calls the participants' explicit `finish_combat()` 
 - `tests/rival_smoke.gd`, `rival_soak.gd`: deterministic duel checks and a one-minute unattended encounter.
 - `scripts/match/duel_match.gd`, `scripts/debug/match_hud.gd`: duel scoring, result lifecycle, keyboard/controller restart, and match UI.
 - `tests/match_smoke.gd`, `tests/fixtures/tick_damage.gd`: match/restart checks, including real damage callbacks before and after the controller in one physics tick.
-- `tests/run_checks.ps1`: editor/startup validation and all six suites; also rejects Godot runtime errors even when the engine exits with code zero.
+- `scripts/audio/sound_bank.gd`, `combat_audio.gd`: original procedural cues, scene signal wiring, bounded spatial/centered playback pools, mute, and result/restart lifecycle.
+- `tests/audio_smoke.gd`: waveform, event dispatch, rate limiting, mute, playback, and lifecycle checks.
+- `tests/run_checks.ps1`: editor/startup validation and all seven suites; also rejects Godot runtime errors even when the engine exits with code zero.
 
 ## Rival behavior and tuning
 
@@ -127,30 +154,30 @@ godot --headless --path . --fixed-fps 120 --script res://tests/combat_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/rival_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/rival_soak.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/match_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/audio_smoke.gd
 ```
 
 On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
 
 Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
 
-For v0.5, all **102 behavior checks** pass: the original 73 driving/weapon/combat/rival checks plus 29 match checks. Match checks cover fresh state/objective, ignored restart during play, no healing/scoring via manual recovery, scoring once per destruction, non-final respawns, victory/defeat at configurable targets, final projectile/effect cleanup, persistent control/damage/respawn/reset shutdown, actual Enter and controller Start input events, clean scene reloads, held-button protection, repeated reloads without duplicate connections, order-independent simultaneous destruction/draws across physics priorities, and continuous training respawns. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
+For v0.6, all **131 behavior checks** pass: the previous 102 plus 29 audio checks. Audio checks verify non-silent bounded PCM with quiet endpoints, distinct cues, deterministic generation without disturbing gameplay RNG, stream caching, no false initial/blocked/healing feedback, real weapon/impact signals, existing fire cadence, spatial muzzle placement, bounded/rate-limited pools, centered player damage, destruction/respawn, all result variants, post-result suppression, actual M and D-pad mute input events, held-button behavior, mute persistence, observer reconnection, and training audio. The match restart test now counts scoring connections specifically because health also has an audio observer; its duplicate-score protection remains covered. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
 
 The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns, producing a 0–2 score. It verifies score/state consistency in addition to the original movement and stability criteria; the default encounter remains Playing at 60 seconds. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
 
-The user approved human playtests through v0.4. A graphical Windows launch of v0.5 was used to inspect the live score/objective, victory, defeat, draw, and fresh match after scene restart. The arena remains visible and the result/restart text is readable. Synthetic keyboard/controller events verify mapped restart behavior, but physical controller testing and human evaluation of full-match pacing and replay appeal remain pending. Automated checks do not establish a compelling match loop.
+The user approved human/controller playtests through v0.5. Headless v0.6 checks validate waveform data and event/pool behavior without starting device playback; accelerated dummy-mixer playback is deliberately skipped. The audio suite was also run graphically on Windows, where real spatial playback started and all checks passed without reported errors or cleanup warnings. This verifies engine playback state, not perceived sound quality. Human listening, speaker/headphone mix, and physical controller mute testing remain pending.
 
 ### Human playtest checklist
 
-- Play a complete first-to-three match; follow both scores during movement and eliminations.
-- Confirm each elimination scores once and non-final deaths resume combat normally.
-- Win and lose a match; check that results appear clearly and combat/respawns remain stopped.
-- Restart with Enter and a physical controller's Start/Menu button, including repeated matches and a held button.
-- Confirm full health, original spawns, fresh scores, working controls, and preserved driving/combat feel after restart.
-- Reopen training with F6 and check its continuous practice behavior.
-- Assess whether finishing a duel makes you want to play another.
+- Listen on speakers/headphones: distinguish player shots, enemy shots, impacts, player damage, and destruction while moving.
+- Check nearby/distant sound positioning and whether sustained firing becomes harsh or masks useful cues.
+- Finish and restart a match; check the correct result phrase, stopped combat tails, and clean playback afterward.
+- Mute/unmute with M and a physical controller's D-pad down, including on the result screen and across replay.
+- Revisit training with F6 and listen to dummy/turret damage and respawns.
+- Confirm the approved handling, combat balance, scoring, and restart behavior remain unchanged.
 
 ### Known limits
 
 Suspension rays only contact static arena layer 1; tires are visual placeholders without rolling collision or wheel spin. There is no drivetrain/gearing simulation or advanced tire model. The player uses manual rollover recovery; the AI has a delayed recovery reset. The camera checks the desired chase line against the arena with a simple ray rather than a swept camera volume.
 
-Weapon feedback is simple geometry without audio. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks, with at most one shot per tick. Dummy/turret respawn still restores solid collision in place in training; move away from their footprints. Non-final vehicle respawns wait indefinitely for spawn clearance. Projectile nodes and flashes are short lived rather than pooled. Rival navigation is local rather than a maze planner. Match scores are in-memory only; restart reloads the scene and no statistics are saved. The scene deliberately freezes participants after a result. No timer, rounds, main menu, pause system, pickups, armor, collision damage, deformation, progression, additional enemies, or new weapons are included. Human match-loop testing remains necessary.
+Visual feedback remains simple geometry; audio is procedural placeholder synthesis. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks. Dummy/turret respawn restores solid collision in place in training; non-final vehicle respawns wait for spawn clearance. Rival navigation is local rather than a maze planner. Match scores are in-memory only and reset on scene reload. No timer, rounds, menu, pause system, pickups, collision damage, deformation, progression, additional enemies, or new weapons are included. Sound is distance-based without wall occlusion, and voice limits can truncate older sounds. Human audio/playtesting remains necessary.
