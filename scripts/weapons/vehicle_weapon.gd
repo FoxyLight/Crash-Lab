@@ -1,6 +1,7 @@
 extends Node3D
 ## Consumes commands without applying any force or changing chassis properties.
 signal shot_fired
+signal projectile_impacted(location: Vector3)
 const Projectile = preload("res://scripts/weapons/projectile.gd")
 const Flash = preload("res://scripts/weapons/hit_flash.gd")
 @export var input_provider: Node
@@ -31,6 +32,7 @@ func _fire() -> void:
 	if not firing_enabled:
 		return
 	var projectile := Projectile.new()
+	projectile.impacted.connect(_on_projectile_impact)
 	projectile.velocity = -muzzle.global_basis.z * projectile_speed
 	projectile.damage = projectile_damage
 	projectile.lifetime = projectile_lifetime
@@ -44,3 +46,6 @@ func _fire() -> void:
 	var flash := Flash.new()
 	muzzle.add_child(flash)
 	shot_fired.emit()
+
+func _on_projectile_impact(location: Vector3) -> void:
+	projectile_impacted.emit(location)

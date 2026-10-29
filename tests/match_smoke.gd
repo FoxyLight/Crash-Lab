@@ -103,7 +103,8 @@ func run() -> void:
 		match_node.request_restart()
 		match_node.request_restart()
 		await wait_for_reload(old_id)
-		clean_cycles = clean_cycles and match_node.state == 0 and match_node.player_score == 0 and rival_health.destroyed.get_connections().size() == 1 and match_node.score_changed.get_connections().size() == 1
+		var scoring_connections = rival_health.destroyed.get_connections().filter(func(connection): return connection.callable.get_object() == match_node)
+		clean_cycles = clean_cycles and match_node.state == 0 and match_node.player_score == 0 and scoring_connections.size() == 1 and match_node.score_changed.get_connections().size() == 1
 	check(clean_cycles, "repeated finish/restart cycles create exactly one scoring and HUD connection")
 	await fixture(1)
 	player_health.take_damage(10000.0)

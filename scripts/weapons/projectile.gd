@@ -1,4 +1,5 @@
 extends Node3D
+signal impacted(location: Vector3)
 ## Sweeps the complete motion segment each physics tick; the visual has no collider.
 const Flash = preload("res://scripts/weapons/hit_flash.gd")
 var velocity: Vector3 = Vector3.ZERO
@@ -42,6 +43,7 @@ func _physics_process(delta: float) -> void:
 		var flash := Flash.new()
 		get_tree().current_scene.add_child(flash)
 		flash.global_position = hit.position
+		impacted.emit(hit.position)
 		queue_free()
 		return
 	global_position = end

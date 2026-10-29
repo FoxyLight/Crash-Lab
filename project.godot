@@ -15,6 +15,10 @@ common/physics_ticks_per_second=120
 3d/physics_engine="GodotPhysics3D"
 
 [input]
+mute_audio={
+"deadzone": 0.15,
+"events": [Object(InputEventKey,"physical_keycode":77), Object(InputEventJoypadButton,"button_index":12)]
+}
 restart_match={
 "deadzone": 0.15,
 "events": [Object(InputEventKey,"physical_keycode":4194309), Object(InputEventJoypadButton,"button_index":6)]

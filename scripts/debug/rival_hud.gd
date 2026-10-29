@@ -22,7 +22,7 @@ func _ready() -> void:
 	controls.add_theme_color_override("font_shadow_color", Color.BLACK)
 	controls.add_theme_constant_override("shadow_offset_x", 2)
 	controls.add_theme_constant_override("shadow_offset_y", 2)
-	controls.text = "CRASH LAB / v0.5 DUEL\nW / S — Accelerate / Brake / Reverse\nA / D — Steer   SPACE — Handbrake   R — Reset\nHold LMB / F — Fire forward\nController: triggers / stick / A / D-pad up / RB"
+	controls.text = "CRASH LAB / v0.6 DUEL\nW / S — Accelerate / Brake / Reverse\nA / D — Steer   SPACE — Handbrake   R — Reset\nHold LMB / F — Fire forward\nController: triggers / stick / A / D-pad up / RB"
 	add_child(controls)
 
 func _process(_delta: float) -> void:
