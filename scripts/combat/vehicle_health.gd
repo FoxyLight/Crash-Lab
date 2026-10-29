@@ -7,6 +7,7 @@ signal respawned
 @export_range(1.0, 1000.0) var maximum_health: float = 100.0
 @export_range(0.1, 10.0) var respawn_delay: float = 3.0
 @export_range(0.0, 5.0) var spawn_protection: float = 1.5
+@export_range(0.0, 10.0) var alternate_spawn_delay: float = 1.5
 var health: float
 var is_destroyed: bool = false
 var respawn_remaining: float = 0.0
@@ -15,6 +16,8 @@ var hit_remaining: float = 0.0
 var waiting_for_spawn: bool = false
 var pending_reset_generation: int = -1
 var combat_active: bool = true
+var spawn_blocked_time: float = 0.0
+var death_source: WeakRef
 @onready var vehicle: RigidBody3D = get_parent()
 @onready var driver = vehicle.get_node("DriverInput")
 var meshes: Array[MeshInstance3D] = []
@@ -40,13 +43,19 @@ func _collect_meshes() -> void:
 		meshes.append(node)
 
 func take_damage(amount: float) -> void:
-	if not combat_active or is_destroyed or protection_remaining > 0.0 or amount <= 0.0:
+	take_damage_from(amount, null)
+
+func take_damage_from(amount: float, source: Node) -> void:
+	if not combat_active or is_destroyed or protection_remaining > 0.0 or not is_finite(amount) or amount <= 0.0:
 		return
 	health = maxf(0.0, health - amount)
 	hit_remaining = 0.15
 	health_changed.emit(health, maximum_health)
 	damaged.emit()
 	if health <= 0.0:
+		# Only this accepted lethal hit decides credit. Never reuse an old attacker
+		# after an unattributed/environmental final hit, repair, or another life.
+		death_source = weakref(source) if is_instance_valid(source) else null
 		is_destroyed = true
 		respawn_remaining = respawn_delay
 		pending_reset_generation = -1
@@ -54,6 +63,9 @@ func take_damage(amount: float) -> void:
 		driver.clear_commands()
 		driver.reset_requested = false
 		destroyed.emit()
+
+func get_death_source() -> Node:
+	return death_source.get_ref() if death_source != null else null
 
 func restore_health(amount: float) -> float:
 	if not combat_active or is_destroyed or not is_finite(amount) or amount <= 0.0:
@@ -74,14 +86,18 @@ func _physics_process(delta: float) -> void:
 		respawn_remaining = maxf(0.0, respawn_remaining - delta)
 		if respawn_remaining <= 0.0:
 			waiting_for_spawn = true
-			if pending_reset_generation < 0 and vehicle.is_spawn_clear():
-				pending_reset_generation = vehicle.reset_generation + 1
+			spawn_blocked_time += delta
+			if (pending_reset_generation < 0 or vehicle.reset_generation < pending_reset_generation) and vehicle.prepare_respawn(spawn_blocked_time >= alternate_spawn_delay):
+				if pending_reset_generation < 0:
+					pending_reset_generation = vehicle.reset_generation + 1
 				driver.reset_requested = true
 			if pending_reset_generation >= 0 and vehicle.reset_generation >= pending_reset_generation:
 				is_destroyed = false
 				waiting_for_spawn = false
 				health = maximum_health
 				protection_remaining = spawn_protection
+				spawn_blocked_time = 0.0
+				death_source = null
 				driver.controls_enabled = true
 				health_changed.emit(health, maximum_health)
 				respawned.emit()

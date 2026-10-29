@@ -7,6 +7,8 @@ enum Result { NONE, VICTORY, DEFEAT, DRAW }
 @export_range(1, 20) var elimination_target: int = 3
 @export var player: RigidBody3D
 @export var rival: RigidBody3D
+@export var require_damage_source: bool = false # Strict for local play; legacy one-arg AI fixtures remain compatible.
+@export var input_router: Node
 var state: State = State.PLAYING
 var result: Result = Result.NONE
 var player_score: int = 0
@@ -27,6 +29,11 @@ func _on_destroyed(index: int) -> void:
 	if state != State.PLAYING or credited[index]:
 		return
 	credited[index] = true
+	var victim = player if index == 0 else rival
+	var opponent = rival if index == 0 else player
+	var source: Node = victim.get_node("DamageReceiver").get_death_source()
+	if (require_damage_source or source != null) and source != opponent:
+		return
 	var tick := Engine.get_physics_frames()
 	var points: Vector2i = pending_eliminations.get(tick, Vector2i.ZERO)
 	if index == 0:
@@ -73,6 +80,11 @@ func _finish() -> void:
 	match_finished.emit(result)
 
 func _process(_delta: float) -> void:
+	if input_router != null:
+		var restart: bool = input_router.consume_restart()
+		if state == State.FINISHED and restart:
+			request_restart()
+		return
 	if not Input.is_action_pressed("restart_match"):
 		restart_armed = true
 	if state == State.FINISHED and restart_armed and Input.is_action_just_pressed("restart_match"):

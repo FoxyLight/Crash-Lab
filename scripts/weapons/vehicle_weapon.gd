@@ -46,6 +46,7 @@ func _fire() -> void:
 	projectile.color = projectile_color
 	projectile.visual_size = projectile_visual_size
 	projectile.shooter_rid = shooter.get_rid() if is_instance_valid(shooter) else RID()
+	projectile.damage_source = weakref(shooter) if is_instance_valid(shooter) else null
 	if is_instance_valid(shooter):
 		for area in shooter.find_children("*", "Area3D", true, false):
 			projectile.shooter_areas.append(area.get_rid())
