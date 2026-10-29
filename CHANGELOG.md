@@ -4,6 +4,12 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 
 ## Unreleased
 
+### v0.8.1: Free standard-runner Godot CI (proposed)
+- Add a public-repository-only GitHub Actions workflow using a single free standard Ubuntu runner and pinned official Godot 4.7.2 binary with SHA-256 verification.
+- Execute editor import, default scene startup, and the nine existing smoke test suites; fail on runtime errors or nonzero exits.
+- Add bounded job/command timeouts, read-only permissions, and redundant-run cancellation without uploading artifacts or caches.
+- Retain local Windows Godot testing and document private-repository fail-closed behavior. CI passing and milestone completion require evidence from the GitHub PR checks.
+
 ### Development roadmap and cost guardrails
 - Track the proposed v0.8.1–v0.13 milestone sequence in `docs/ROADMAP.md`.
 - Approve only free standard GitHub-hosted runners on the public repository; prohibit premium/paid runners, artifact uploads, and workflow caches.

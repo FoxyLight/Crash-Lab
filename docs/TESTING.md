@@ -1,6 +1,6 @@
 # Testing and validation
 
-> Report tests actually executed, not presumed. This document tracks the **v0.8** workflow. There is currently **no GitHub Actions CI** configured; local validation remains necessary.
+> Report tests actually executed, not presumed. This document tracks the **v0.8** gameplay baseline and the **v0.8.1** free-only CI implementation. The presence of a workflow does not establish a passing run; check its current GitHub check results. Local validation remains necessary.
 
 ## Environment
 
@@ -47,16 +47,18 @@ The v0.8 README **reports** 192 passing behavior checks and separate duel-soak r
 - [ ] Verify test arena and duel arena both still work.
 - [ ] Watch for script/runtime errors and frame-time regressions.
 
-## Future GitHub Actions policy: free standard runners only
+## GitHub Actions automated validation (v0.8.1)
 
-**Approved constraint, not yet implemented.** The project may add GitHub Actions only for **public-repository jobs using free standard GitHub-hosted runners** (for example `ubuntu-24.04` or `windows-2025`). Larger, premium, GPU, and paid runners are prohibited. Do not configure paid integrations or external CI.
+The repository includes [`.github/workflows/godot-headless.yml`](../.github/workflows/godot-headless.yml). When enabled on the **public** repository, it runs on push to `main` and pull requests targeting `main`, using a single standard `ubuntu-24.04` runner.
 
-- No `actions/upload-artifact`, `actions/cache`, package publication, or any other workflow artifact/cache storage. Inspect ordinary job logs and exit codes instead. GitHub retains workflow logs and check results under its retention settings; those are not optional artifact uploads.
-- Every future hosted test job must **skip when the repository is private** (for example, with job-level `if: ${{ github.event.repository.private == false }}`). If the repository becomes private, disable CI and use local testing until costs are explicitly revisited.
-- Use read-only job permissions, bounded timeouts, targeted triggers, and cancellation of duplicate runs. Review GitHub's official billing/runners documentation before implementation or any cost-related workflow edit.
-- Keep the existing Windows `tests/run_checks.ps1` working. If free CI cannot be verified, run tests locally rather than risk billing.
+- Installs the official **Godot 4.7.2-stable Linux x86_64** release from `godotengine/godot-builds`. Verifies its published SHA-256 digest before executing the binary; checks the engine version.
+- Runs headless editor import, default scene startup, and the same nine smoke suites used by the Windows PowerShell runner. Rejects nonzero engine exits, timeouts, and lines beginning `SCRIPT ERROR:` or `ERROR:`.
+- Runs with read-only repository permissions, a 30-minute job timeout, five-minute per-command timeouts, and cancellation of redundant runs.
+- **Cost boundaries:** job-level `github.event.repository.private == false` guard; free standard runner only; **no** uploaded test/build artifacts, package publishing, or workflow caches. Job logs and check status are retained automatically by GitHub under repository settings.
+- The workflow does not install export templates, make distributable builds, use paid third-party services, or modify repository billing settings.
+- If repository visibility changes to private, the hosted job must remain skipped; disable the workflow, re-evaluate billing, and continue with the local runner.
 
-See [ROADMAP](ROADMAP.md) for the binding project cost constraint and proposed v0.8.1 acceptance criteria. **No workflow was added by this documentation change.**
+**Test reporting:** read the workflow's actual results in the GitHub Actions / Checks view. A workflow file being present or a PR being opened is **not** evidence that the suites passed. Headless Linux checks complement, but do not replace, Windows gameplay/controller/audio testing. See [ROADMAP](ROADMAP.md) for the approved zero-paid-CI policy.
 
 ## Pull request testing requirements
 
