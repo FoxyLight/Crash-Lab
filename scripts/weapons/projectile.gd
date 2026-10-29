@@ -9,12 +9,13 @@ var shooter_rid: RID
 var shooter_areas: Array[RID] = []
 var age: float = 0.0
 var color: Color = Color("7bffff")
+var visual_size: Vector3 = Vector3(0.12, 0.12, 0.65)
 
 func _ready() -> void:
 	add_to_group("projectiles")
 	var visual := MeshInstance3D.new()
 	var shape := BoxMesh.new()
-	shape.size = Vector3(0.12, 0.12, 0.65)
+	shape.size = visual_size
 	visual.mesh = shape
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED

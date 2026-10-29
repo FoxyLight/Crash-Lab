@@ -118,7 +118,10 @@ func play_cue(cue: StringName, location: Vector3 = Vector3.ZERO, spatial: bool =
 	cue_played.emit(cue, spatial, location)
 
 func _on_shot(weapon: Node3D) -> void:
-	play_cue(&"player_shot" if weapon.shooter == player else &"enemy_shot", weapon.muzzle.global_position)
+	var cue: StringName = weapon.shot_cue
+	if cue == &"":
+		cue = &"player_shot" if weapon.shooter == player else &"enemy_shot"
+	play_cue(cue, weapon.muzzle.global_position)
 
 func _on_impact(location: Vector3) -> void:
 	if impact_cooldown <= 0.0:

@@ -7,6 +7,21 @@ var brake: float = 0.0
 var steering: float = 0.0
 var handbrake: bool = false
 var reset_requested: bool = false
+var weapon_cycle_armed: bool = true
+
+func consume_weapon_selection() -> int:
+	var cycle_pressed := Input.is_action_pressed("cycle_weapon")
+	if not cycle_pressed:
+		weapon_cycle_armed = true
+	var cycle := Input.is_action_just_pressed("cycle_weapon") and weapon_cycle_armed
+	if cycle_pressed:
+		weapon_cycle_armed = false
+	# Direct slot 1 wins over slot 2; either wins over cycle in the same tick.
+	if Input.is_action_just_pressed("select_blaster"):
+		return 0
+	if Input.is_action_just_pressed("select_cannon"):
+		return 1
+	return -2 if cycle else -1
 
 func stop_commands() -> void:
 	controls_enabled = false

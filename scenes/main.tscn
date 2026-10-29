@@ -1,6 +1,6 @@
 [gd_scene load_steps=9 format=3]
 [ext_resource type="PackedScene" path="res://scenes/test_arena.tscn" id="1"]
-[ext_resource type="PackedScene" path="res://scenes/vehicles/muscle_car.tscn" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/player_car.tscn" id="2"]
 [ext_resource type="Script" path="res://scripts/camera/chase_camera.gd" id="3"]
 [ext_resource type="Script" path="res://scripts/debug/driving_debug.gd" id="4"]
 [ext_resource type="PackedScene" path="res://scenes/enemies/stationary_turret.tscn" id="5"]

@@ -23,7 +23,7 @@ func run() -> void:
 			peak = maxf(peak, absf(sample))
 			energy += sample * sample
 		valid = valid and stream.mix_rate == 22050 and not stream.stereo and stream.data.size() > 1000 and peak > 0.05 and peak <= 0.601 and energy > 0.1 and abs(stream.data.decode_s16(0)) < 10 and abs(stream.data.decode_s16(stream.data.size() - 2)) < 10
-	check(valid, "all ten cues contain bounded non-silent PCM with quiet endpoints")
+	check(valid, "all cues contain bounded non-silent PCM with quiet endpoints")
 	check(Bank.get_stream(&"player_shot").data != Bank.get_stream(&"enemy_shot").data and Bank.get_stream(&"victory").data != Bank.get_stream(&"defeat").data and Bank.get_stream(&"draw").data != Bank.get_stream(&"victory").data, "player/enemy shots and three results have distinct waveforms")
 	var original: PackedByteArray = Bank.get_stream(&"impact").data.duplicate()
 	Bank.cache.erase(&"impact")

@@ -1,0 +1,13 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/muscle_car.tscn" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/heavy_cannon.tscn" id="2"]
+[ext_resource type="Script" path="res://scripts/weapons/player_loadout.gd" id="3"]
+[ext_resource type="Script" path="res://scripts/debug/loadout_hud.gd" id="4"]
+[node name="PlayerCar" instance=ExtResource("1")]
+[node name="HeavyCannon" parent="." node_paths=PackedStringArray("input_provider", "shooter") instance=ExtResource("2")]
+input_provider = NodePath("../DriverInput")
+shooter = NodePath("..")
+[node name="Loadout" type="Node" parent="."]
+script = ExtResource("3")
+[node name="LoadoutHUD" type="CanvasLayer" parent="."]
+script = ExtResource("4")
