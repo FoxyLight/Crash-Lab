@@ -4,6 +4,12 @@ extends Camera3D
 @export var height: float = 4.0
 @export var rotation_response: float = 4.0
 @export var smoothing: float = 9.0
+@export_group("Speed perception")
+@export var base_fov: float = 75.0
+@export var speed_fov_increase: float = 10.0
+@export var speed_fov_start: float = 8.0 # m/s
+@export var speed_fov_full: float = 40.0 # m/s
+@export var speed_fov_response: float = 3.0
 var heading := Vector3.BACK
 var initialized: bool = false
 @export_range(0.0, 0.5) var moderate_shake: float = 0.06 # camera offset in meters
@@ -35,6 +41,10 @@ func add_impact(data: Dictionary) -> void:
 	shake_remaining = shake_duration
 
 func _physics_process(delta: float) -> void:
+	var speed: float = target.linear_velocity.length() if is_instance_valid(target) and target is RigidBody3D else 0.0
+	var speed_blend := smoothstep(speed_fov_start, maxf(speed_fov_start + 0.1, speed_fov_full), speed)
+	var desired_fov := clampf(base_fov + speed_fov_increase * speed_blend, 50.0, 95.0)
+	fov = lerpf(fov, desired_fov, 1.0 - exp(-maxf(0.0, speed_fov_response) * delta))
 	if is_instance_valid(target) and target.get_node("ImpactDetector").grace_remaining > 0.0:
 		clear_impact()
 	shake_remaining = maxf(0.0, shake_remaining - delta)

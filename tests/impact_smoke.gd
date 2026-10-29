@@ -100,9 +100,91 @@ func _run() -> void:
 	await ticks(420)
 	check(not car.get_node("DamageReceiver").is_destroyed and detector.event_count == before and detector.last_impact.is_empty(), "safe respawn restores driving without stale impact dispatch")
 	check(Bank.get_stream(&"crash_minor").data != Bank.get_stream(&"impact").data and Bank.get_stream(&"crash_major").data != Bank.get_stream(&"crash_moderate").data, "procedural crash cues differ by severity and from projectile cue")
+	await reliability_checks()
+	await spark_checks()
 	await duel_lifecycle()
 	print("Impact smoke checks: ", checks, " checks, ", failures, " failures")
 	quit(1 if failures else 0)
+
+func reliability_checks() -> void:
+	await fixture(Vector3(0, 1.25, 5), Vector3(0, 1.25, -5))
+	var silent = car if car.get_instance_id() < other.get_instance_id() else other
+	silent.max_contacts_reported = 0 # Real physics, deliberately one-sided sensor data.
+	car.linear_velocity = Vector3(0, 0, -40)
+	other.linear_velocity = Vector3(0, 0, 40)
+	await ticks(50)
+	check(events.size() == 1 and peak() == 3, "either vehicle contact report can produce one canonical major event")
+	await fixture(Vector3(0, 1.25, 5), Vector3(0, 1.25, 0))
+	car.linear_velocity = Vector3(0, 0, -2)
+	for i in 140:
+		await ticks(1)
+		if not events.is_empty(): break
+	check(events.size() == 1 and peak() == 1, "escalation fixture first records a physical minor bump")
+	car.linear_velocity = Vector3(0, 0, -25)
+	await ticks(15)
+	check(events.size() == 2 and peak() == 3, "minor contact can escalate once to major without losing feedback")
+	await ticks(150)
+	check(events.size() == 2, "escalated major does not repeatedly emit during the same contact episode")
+	await fixture(Vector3(0, 1.25, 5), Vector3(30, 1.25, 30))
+	block(Vector3(0, 2, 0), Vector3(50, 4, 0.15))
+	block(Vector3(2.3, 2, 0), Vector3(0.15, 4, 30))
+	await ticks(3)
+	car.linear_velocity = Vector3(0, 0, -55)
+	for i in 30:
+		await ticks(1)
+		if not events.is_empty(): break
+	# A new lateral launch immediately after the first actual wall hit isolates
+	# distinct-collider suppression from the solver's friction at a corner.
+	car.linear_velocity = Vector3(55, 0, 0)
+	await ticks(60)
+	print("Corner contact count: ", events.size(), " ", summarize())
+	check(events.size() == 2 and events[0].collider != events[1].collider and events[1].tick - events[0].tick < 14, "two distinct nearby obstacles do not lose events to a vehicle-wide cooldown")
+	await fixture(Vector3(0, 1.25, 6), Vector3(0, 1.25, -6))
+	car.linear_velocity = Vector3(0, 0, -55)
+	other.linear_velocity = Vector3(0, 0, 55)
+	await ticks(60)
+	print("110 m/s relative head-on: ", summarize(), " separation=", car.position.distance_to(other.position))
+	check(events.size() == 1 and peak() == 3 and car.position.z > other.position.z, "55 m/s opposing chassis stop without passing through each other")
+	check(car.position.distance_to(other.position) > 3.5 and car.global_basis.y.y > 0.7 and other.global_basis.y.y > 0.7, "high-speed head-on retains separation and upright stability")
+	await fixture(Vector3(-5, 1.25, 0), Vector3(0, 1.25, 0))
+	car.linear_velocity = Vector3(55, 0, 0)
+	await ticks(60)
+	check(events.size() == 1 and peak() == 3 and car.position.x < other.position.x and car.global_basis.y.y > 0.7, "55 m/s side ram collides physically and remains upright")
+	await fixture(Vector3(0, 1.25, 6), Vector3(0, 1.25, 0))
+	car.linear_velocity = Vector3(0, 0, -55)
+	other.linear_velocity = Vector3(0, 0, -18)
+	await ticks(60)
+	check(events.size() == 1 and peak() == 3 and car.position.z > other.position.z, "high-speed rear-end produces one major collision without pass-through")
+	await fixture(Vector3(-2.0, 1.25, 3), Vector3(0, 1.25, 0))
+	car.linear_velocity = Vector3(4, 0, -55)
+	await ticks(60)
+	check(not events.is_empty() and peak() < 3, "55 m/s tangential sideswipe uses its small normal closing speed")
+	await fixture(Vector3(0, 1.25, 5), Vector3(30, 1.25, 30))
+	block(Vector3(0, 2, 0), Vector3(50, 4, 0.15))
+	await ticks(3)
+	car.linear_velocity = Vector3(0, 0, -55)
+	await ticks(60)
+	check(events.size() == 1 and peak() == 3 and car.position.z > 1.8 and car.global_basis.y.y > 0.7, "CCD stops 55 m/s chassis at thin wall without tunneling")
+
+func spark_checks() -> void:
+	var Sparks = load("res://scripts/effects/crash_sparks.gd")
+	var burst = Sparks.new()
+	burst.severity = 3
+	scene.add_child(burst)
+	check(is_equal_approx(burst.duration, 0.65) and burst.streak_count == 18, "major spark burst has 18 streaks and a bounded 0.65-second lifetime")
+	var before: PackedVector3Array = burst.streak_mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	check(before.size() == 108 and before[1].distance_to(before[2]) > 0.09 and burst.center.mesh.radius > 0.25, "major sparks use thick triangle streaks and a visible center instead of thin lines")
+	check(burst.material.shading_mode == BaseMaterial3D.SHADING_MODE_UNSHADED and burst.material.vertex_color_use_as_albedo, "spark contrast works with unshaded vertex colors without renderer glow")
+	await ticks(25)
+	var after: PackedVector3Array = burst.streak_mesh.surface_get_arrays(0)[Mesh.ARRAY_VERTEX]
+	check(after[1].distance_to(before[1]) > 0.3 and burst.center_material.albedo_color.a < 0.2, "spark geometry moves outward and the bright center fades")
+	await ticks(48)
+	check(is_instance_valid(burst) and not burst.is_queued_for_deletion(), "major burst remains visible beyond the old 0.42-second limit")
+	await ticks(8)
+	check(not is_instance_valid(burst), "spark burst frees its geometry after the new bounded lifetime")
+	var data := {"vehicle": car, "collider": other, "position": car.position + Vector3(0.9, -0.2, 0), "type": "vehicle"}
+	var origin: Vector3 = feedback.spark_origin(data)
+	check(is_equal_approx(origin.x, data.position.x) and is_equal_approx(origin.z, data.position.z) and origin.y > car.global_position.y + 0.8, "spark center stays at contact x/z while clearing placeholder bodywork")
 
 func fixture(a: Vector3, b: Vector3) -> void:
 	if is_instance_valid(scene):
@@ -156,8 +238,10 @@ func duel_lifecycle() -> void:
 	check(pad.available and car.get_node("Loadout").selected_index == 0 and match_node.player_score == 0, "duel starts with existing pickup, weapon and scoring state")
 	# Simulate an already captured event waiting for safe dispatch when match ends.
 	detector.pending.append({"vehicle": car, "collider": other, "severity": 3})
+	detector.pending_reactions.append({"collider": other})
+	other.get_node("ImpactDetector").pending_reactions.append({"collider": car})
 	car.finish_combat()
-	check(detector.pending.is_empty() and detector.contacts.is_empty(), "finish gate clears queued impacts before further dispatch")
+	check(detector.pending.is_empty() and detector.contacts.is_empty() and detector.pending_reactions.is_empty() and other.get_node("ImpactDetector").pending_reactions.is_empty(), "finish gate clears queued impacts and both participants' pending reactions")
 	other.get_node("DamageReceiver").take_damage(1000.0)
 	await ticks(5)
 	check(match_node.state == 1 and not scene.get_node("ImpactFeedback").enabled and not pad.enabled, "match completion disables impact feedback alongside existing pickups")

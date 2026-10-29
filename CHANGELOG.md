@@ -5,11 +5,15 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 ## Unreleased
 
 ### v0.9: Impact Lab (feature branch; acceptance pending)
+- Refine after human playtesting: fix one-sided reporter loss, allow bounded severity escalation after weak touches, and replace vehicle-wide suppression with independent pair episodes and queued upgrades. Reset/finish cancels both sides' queued events/reactions. Thresholds remain 1.5/5/12 m/s.
+- Replace thin-line sparks with thick animated yellow-white/orange streaks and a bright center, projected above visible bodywork; major duration 0.65 s, eight-burst cap retained.
+- Raise shared power to 22,000 N / 55 m/s cutoff with original steering fade independently fixed at 42 m/s. Preserve mass, brakes, reverse cutoff, grip, damping and suspension. Add configurable smooth 75–85° speed FOV.
+- Measure 22.81 m/s after 3 s (previous 18.46) and 34.05 m/s after a 30 s straight run (previous 26.01); distinguish actual speeds from power cutoff. Add contact-force telemetry, high-speed/one-sided/escalation/geometry/lifecycle and comparative driving checks. All 256 local behavior checks plus rival soak pass; renewed human feel, controller, listening and balance acceptance is pending.
 - Add reusable GodotPhysics3D contact telemetry and configurable 1.5/5/12 m/s minor/moderate/major normal closing-speed thresholds; ignore support contacts and coalesce sustained collisions and vehicle pairs.
-- Add original severity-specific crash cues, bounded short spark bursts and restrained camera offsets. Preserve approved handling/follow defaults, weapons, health, repair, AI and scoring; no collision health damage.
+- Add original severity-specific crash cues, bounded spark bursts and restrained camera offsets. Preserve weapons, health, repair, AI commands and scoring; no collision health damage. Power/FOV refinement is explicitly described above.
 - Add optional one-shot planar/yaw exaggeration, disabled by default, capped at 700 N·s linear and 180 kg·m²/s angular impulse.
 - Clear impact state on recovery/destruction/respawn/finish/restart; stop crash effects at results.
-- Add 37 impact checks to local/approved free CI runners; all 229 local behavior checks and the 60-second soak pass on Godot 4.7.2. Include graphical collision/result screenshots and complete design/physics/architecture/testing documentation. Human Windows/controller collision and listening acceptance is pending.
+- Add impact checks to local/approved free CI runners and complete design/physics/architecture/testing documentation. Include graphical collision/result and before/after spark screenshots; later refinement results supersede the initial 229-check result.
 
 ## v0.8.1 — Free development foundation (merged at `9c0a242`)
 

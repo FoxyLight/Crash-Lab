@@ -14,7 +14,7 @@ Build a small, polished, original Windows vehicular-combat game with responsive 
 - Nine tracked automated test suites, runnable locally. Historical v0.8 README reports **192 passing behavior checks**; this is not a claim that every later branch has been tested.
 - Tracked architectural, design, physics, and testing documentation.
 - **v0.8.1 implemented on main at `9c0a242`:** public-only Godot headless workflow on one free standard runner with no artifacts/caches. Prior wording that it was still proposed is superseded by the merged starting baseline. Current CI results must still be checked per commit.
-- **v0.9 implemented on `feature/impact-lab`, not yet accepted/merged:** telemetry, three speed-based severities, crash audio/sparks, bounded camera feedback, opt-in capped impulses (disabled by default), local regression validation and documentation. Human Windows/controller collision acceptance remains pending.
+- **v0.9 under playtest refinement on `feature/impact-lab`, not accepted/merged:** fix weak-contact escalation, one-sided telemetry and distinct-collider suppression; improve spark visibility, shared acceleration/top speed and speed FOV. Extra crash impulses remain disabled. Local regression validation/documentation updated in the existing PR #12; renewed human Windows/controller acceptance is pending.
 
 ## Approved cost policy for future CI (mandatory)
 
@@ -60,7 +60,7 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | Repository documentation foundation | Implemented | [PR #9](https://github.com/FoxyLight/Crash-Lab/pull/9) |
 | Free-only CI policy | Approved and documented | This file and [TESTING](TESTING.md) |
 | v0.8.1 headless CI implementation | Implemented on merged main | Commit `9c0a242`; [workflow](../.github/workflows/godot-headless.yml) |
-| v0.9 Impact Lab | Implemented on feature branch; human acceptance/merge pending | [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), 229 local behavior checks + 60 s soak, [passing CI](https://github.com/FoxyLight/Crash-Lab/actions/runs/40915139484), [validation](TESTING.md#v09-impact-lab-validation) and screenshots |
+| v0.9 Impact Lab | Refinements implemented; renewed human acceptance/merge pending | Existing [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), 256 local behavior checks + 60 s soak, current PR checks, [validation](TESTING.md#v09-playtest-refinement-validation) and before/after screenshots |
 | v0.10 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
 
 When a milestone is merged, update status and evidence here in the same PR; distinguish planned, in progress, tested, and merged.

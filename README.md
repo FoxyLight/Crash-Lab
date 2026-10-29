@@ -1,8 +1,8 @@
 # Crash Lab v0.9 — Impact Lab
 
-A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available. Approved driving, camera, player weapon, and rival AI settings are preserved.
+A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available.
 
-v0.9 adds reusable physical collision telemetry, three crash severities, original crash audio, short spark bursts, and bounded camera reactions in duel and training. Existing repair pickups, weapons, AI, health and scoring remain intact. All approved driving and chase-follow defaults are unchanged; optional extra crash impulses default **off** pending human testing. Physical collisions still cause **no health damage**.
+v0.9 adds physical collision telemetry, crash feedback and playtest refinements: more reliable event handling, thick moving sparks, stronger acceleration and modest speed-based FOV. Power is now **22,000 N**, with a **55 m/s power cutoff**. Mass, brakes, reverse cutoff, grip, suspension, damping, steering angles and their original 42 m/s fade reference remain intact, as do weapons, AI commands, health, scoring and repairs. Optional extra crash impulses default **off**. Physical collisions still cause **no health damage**. New feel/balance remains subject to human acceptance.
 
 ## Documentation
 
@@ -53,17 +53,32 @@ No new controls. In training (F6 on `scenes/main.tscn`), compare a slow barrier 
 | --- | --- |
 | Minimum / moderate / major normal closing speed | 1.5 / 5 / 12 m/s |
 | Separation before another event against the same body | 0.35 s |
-| Minimum time between emitted events per reporting car | 0.12 s |
+| Minimum interval between severity upgrades for the same contact pair | 0.12 s (upgrade queued, not discarded) |
 | Optional extra impulses | Disabled |
 | Enabled impulse scale / linear cap / yaw cap | 0.04 / 700 N·s / 180 kg·m²/s |
 
-Minor bumps get a short clatter and small spark burst. Moderate/major crashes get progressively longer cues and sparks, with camera offsets of **0.06 m for 0.18 s** and **0.18 m for 0.32 s** on the involved player's camera. Camera follow tuning remains unchanged. Offsets decay to zero; minor contacts never shake it. Scene effects are capped at eight bursts, each lasting at most 0.42 s. M/D-pad down mutes crash cues with existing combat audio.
+Minor bumps get a short clatter and small spark burst. Moderate/major crashes get progressively longer cues and sparks, with camera offsets of **0.06 m for 0.18 s** and **0.18 m for 0.32 s** on the involved player's camera. Chase orientation, distance, smoothing and obstruction avoidance are unchanged. Offsets decay to zero; minor contacts never shake it. Scene effects are capped at eight bursts, each lasting at most **0.65 s**. Sparks now use a yellow-white center and **8/12/18 thick animated triangle streaks**, holding contrast before fading. They retain the contact's horizontal position but rise just above visible placeholder bodywork instead of being buried in the shallow chassis. M/D-pad down mutes crash cues with existing combat audio.
 
-`Debug Output` on `ImpactDetector` prints event actor/collider paths, severity, world contact position/normal, relative velocity and closing speed. One canonical event is emitted per vehicle pair, using the lower instance ID; the reporting signal includes both participants. All manifold contacts are coalesced to the strongest contact for a body. Continuous resting/pushing contact never retriggers until separated. Floor/ramp support contacts with `abs(normal.y) > 0.65` are ignored, including hard landings. Recovery/respawn clears stale state and grants a 0.35 s contact grace period. Destruction and match completion stop crash dispatch; results remove all bursts and clear shake.
+`Debug Output` on `ImpactDetector` prints event actor/collider paths, severity, world contact position/normal, relative velocity and closing speed. **Either vehicle's contact report** feeds one canonical pair owner (lower instance ID), so one-sided data is usable without duplicate pair effects. Manifold contacts coalesce to their strongest closing speed. A weak initial touch may upgrade once per higher severity category; the highest category never repeats while pushing. A distinct collider has its own episode and is not blocked by another collider's cooldown. Floor/ramp support normals with `abs(normal.y) > 0.65` are ignored, including hard landings. Recovery/respawn clears both sides' stale state and grants 0.35 s grace. Destruction and results cancel queued events/reactions, remove bursts and clear shake.
 
 Start tuning feedback through the thresholds and camera offsets. Only try `Exaggeration Enabled` after comparing the default: extra impulses are one-shot central planar pushes and separately limited yaw torque, with no upward push or pitch/roll torque. Default caps add at most 0.5 m/s per body at the approved 1,400 kg mass. These effects are provisional; keyboard/controller feel and listening approval are still required. See [PHYSICS](docs/PHYSICS.md) for calculations and engine API references.
 
 ![Actual graphical head-on collision, health unchanged](docs/images/impact-major.png)
+
+Playtest refinement comparison:
+
+| Measurement (fixed 120 Hz, same physical controller) | Before | Refined |
+| --- | ---: | ---: |
+| Engine force / power cutoff | 15,000 N / 42 m/s | 22,000 N / 55 m/s |
+| Training runway speed after 3 s | 18.46 m/s | 22.81 m/s (+24%) |
+| Long straight speed after 6 s | 24.12 m/s | 30.93 m/s (+28%) |
+| Long straight speed after 30 s | 26.01 m/s | 34.05 m/s (+31%) |
+| Major spark lifetime | 0.42 s, thin lines | 0.65 s, thick moving streaks and center |
+| FOV | Fixed 75° | Smooth 75–85° with speed |
+
+The power cutoff is **not the measured top speed**: ordinary engine falloff and damping still apply. Steady straight-line requested/applied tire forces match, so the tire-force bound is not silently limiting that measurement. Camera exports: `base_fov` 75°, `speed_fov_increase` 10°, `speed_fov_start` 8 m/s, `speed_fov_full` 40 m/s and `speed_fov_response` 3/s. Set the increase to zero for a fixed view. No speed shake, motion blur or steering impairment is added.
+
+[Before sparks](docs/images/impact-major-before.png) / [refined sparks at about 0.42 s](docs/images/impact-major-late.png). Both are normal chase-camera observations from controlled collision fixtures, not human approval.
 
 ## Arena repair pickups
 
@@ -146,7 +161,7 @@ Match rules are local to `duel.tscn`. Training has no match controller, scoring,
 
 `scripts/match/duel_match.gd` owns scoring, completed-tick event batches, Playing/Finished state, result, and restart. It connects to health destruction/respawn signals rather than polling zero health. `scripts/debug/match_hud.gd` observes score/result signals and owns their presentation.
 
-On completion the controller calls the participants' explicit `finish_combat()` hook. Vehicle, health, input, and weapon components stop their own responsibilities; health and weapons retain durable guards against further damage, processing, or direct firing calls. The chassis integration path also ignores reset/force work after completion. Training never invokes these hooks. No global match singleton or global pause is introduced. Driving forces, geometry, collision masks, camera settings, projectile tuning, AI logic, and input bindings from v0.4 are unchanged apart from the new restart action.
+On completion the controller calls the participants' explicit `finish_combat()` hook. Vehicle, health, input, weapon and impact components stop their responsibilities; health and weapons retain durable guards against further damage or direct firing calls. The chassis ignores reset/force work after completion. Training never invokes these hooks. No global match singleton or pause is introduced. Geometry, masks, projectile tuning, AI logic and existing controls remain; v0.9's explicitly requested power/FOV changes are documented above.
 
 ## Structure
 
@@ -223,7 +238,7 @@ Open `scenes/targets/target_dummy.tscn` to tune maximum health (100 HP) and resp
 
 The 1,400 kg `RigidBody3D` chassis has a box collider, continuous collision detection, and a lowered center of mass. Four downward contact rays apply spring/damper suspension forces. Each tire applies lateral velocity correction and longitudinal drive/braking forces, limited by the suspension load. Front tire directions steer; their lateral forces turn the chassis physically. Rear tire grip drops under the handbrake. No per-frame chassis teleporting is used; recovery explicitly restores the spawn transform and clears velocity inside physics integration.
 
-Select **MuscleCar** in the main scene to tune exported parameters. Defaults include 15,000 N engine force, 24,000 N braking force, 42 m/s forward power cutoff (~151 km/h), 13 m/s reverse power cutoff, speed-sensitive steering angles, steering response, lateral traction, rear handbrake grip, tire force limit, mass, damping, suspension stiffness/damping/travel, and recovery heights. Speed limits are power cutoffs, so slopes or impacts can carry the car faster. The initial defaults are applied at startup; restart the scene after changing chassis mass/damping.
+Select **MuscleCar** in training or **Player/Rival** in duel to inspect exported parameters. Shared defaults now include **22,000 N** engine force, unchanged **24,000 N** brakes, **55 m/s** forward power cutoff and **13 m/s** reverse cutoff. Steering keeps its original **42 m/s** fade reference, independent of power cutoff. Grip, tire-force limit, mass, damping, suspension and recovery settings are unchanged. Power cutoffs are not attained speeds or hard clamps; slopes/impacts can carry a car faster. Restart after changing startup mass/damping settings.
 
 Camera distance, height, heading response, and position smoothing are exported on **ChaseCamera**. Debug speed is total velocity in km/h; direction uses the chassis forward velocity. Grounded counts suspension contacts, so a car resting on its roof may show zero.
 
@@ -249,17 +264,20 @@ godot --headless --path . --fixed-fps 120 --script res://tests/impact_smoke.gd
 
 On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
 
-Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
+Editor import and headless launch completed without script or scene errors. The physics suite checks four-wheel settling, measured old/new acceleration, braking, reverse, steering, handbrake, recovery, barriers, upright ramp landing, sustained straight speed and speed FOV. It uses synthetic Input Map actions with a 120-second simulated watchdog and nonzero failure exits. Refined runway acceleration reaches **22.81 m/s after three seconds**, previously 18.46. These checks verify behavior, not enjoyable driving feel.
 
-For v0.9, all **229 behavior checks** pass locally: all 192 existing checks plus 37 impact checks. These include actual low-speed, head-on, glancing, perpendicular side, rear-end, sustained-wall and flat-ground scenarios; canonical event/audio dispatch, valid telemetry, opt-in impulse bounds, camera decay, recovery, destruction, respawn, match finish, restart, and training connections. Measured head-on closing speed was 38.53 m/s (major), glancing 3.64 m/s (minor), and rear-end 11.55 m/s (moderate). The original driving acceleration remains approximately 18.46 m/s after three seconds. See [TESTING](docs/TESTING.md) for validation evidence and CI reporting.
+For the refined v0.9, all **256 behavior checks** pass locally, including **19 driving** and **55 impact** checks. Original low-speed/head-on/glancing/rear fixtures remain; new actual physics checks cover one-sided sensor data, minor-to-major escalation without spam, distinct wall contacts within 0.12 s, 55 m/s opposing/side/rear/glancing crashes, and a 0.15 m wall. The opposing-car fixture reports **107.99 m/s closing speed**, exactly one major event, ~4.27 m final separation and upright cars. Spark geometry, thickness, movement/fade, 0.65 s expiry and surface projection are also checked. Weapon, health, score, repair and restart regressions pass. See [TESTING](docs/TESTING.md) for evidence and CI reporting.
 
-The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns, producing a 0–2 score. It verifies score/state consistency in addition to the original movement and stability criteria; the default encounter remains Playing at 60 seconds. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
+The **60-second default duel simulation** passes: the rival travels **149.65 m**, stays upright **7,200/7,200** frames, needs **zero resets**, fires **13 shots** and destroys the stationary player once, score **0–1**. The original-power observation was 235.26 m, 27 shots and two deaths; higher power changes the encounter trajectory even though AI commands and its 14 m/s desired speed are unchanged. Tests require stable movement, firing, destruction and consistent scoring, not an exact chase route. Balance/fairness still needs human testing.
 
 The user approved human playtests through v0.8. A graphical Windows v0.9 inspection captured an actual head-on collision with one visible spark burst and full health on both cars. A graphics stress probe reached the eight-burst cap, expired all bursts, and cleared bursts/shake at the result screen; training also loaded without reported runtime errors. These are presentation/lifecycle observations, not human driving or listening approval. Impact feel, audio balance and physical-controller playtests remain pending.
 
 ### Human playtest checklist
 
 - Compare slow bumps, fast head-on, side/rear rams and glancing scrapes; check feedback strength and prompt return of control.
+- Try a minor touch followed by a forceful impact, rapid hits on different obstacles and repeated separated rams; check no lost feedback or sustained-contact spam.
+- Judge improved acceleration, high-speed braking, handbrake and the smooth FOV widening on keyboard and controller; compare aiming comfort and rival fairness.
+- Check that thick sparks are obvious from the normal chase view without hiding targets; assess the 0.65 s major duration.
 - Hold against a wall and drive the runway/ramps: no repeated crash noise or shake during ordinary driving.
 - Compare crash sounds with projectile sounds; test mute and assess camera comfort on keyboard and controller.
 - Destroy/respawn, recover with R/D-pad up, finish/restart and repeat in training; check no lingering effects.
