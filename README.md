@@ -4,6 +4,17 @@ A small Godot 4 arcade vehicle combat playground for Windows PC. The default mod
 
 v0.8 adds fixed respawning repair pickups for player and rival. Both player weapons, procedural combat audio, and all approved driving, rival, damage, maximum-health, and match settings remain unchanged. Pickup healing is the new combat variable.
 
+## Documentation
+
+The tracked project documentation lives in this repository. Keep relevant documentation and the changelog updated in the **same pull request** as each code change.
+
+- [Architecture](docs/ARCHITECTURE.md): runtime systems, ownership, integration contracts.
+- [Game design](docs/GAME_DESIGN.md): design pillars, implemented features versus experiments.
+- [Physics](docs/PHYSICS.md): driving model, tuning defaults, collisions, recovery.
+- [Testing](docs/TESTING.md): validation commands, test suites, manual playtests.
+- [Changelog](CHANGELOG.md): milestone history and unreleased work.
+- [Pull request template](.github/PULL_REQUEST_TEMPLATE.md): required documentation and testing checklist.
+
 ## Run
 
 1. Open `project.godot` with Godot 4.7.2 (the version validated for this prototype).
