@@ -60,7 +60,7 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | Repository documentation foundation | Implemented | [PR #9](https://github.com/FoxyLight/Crash-Lab/pull/9) |
 | Free-only CI policy | Approved and documented | This file and [TESTING](TESTING.md) |
 | v0.8.1 headless CI implementation | Implemented on merged main | Commit `9c0a242`; [workflow](../.github/workflows/godot-headless.yml) |
-| v0.9 Impact Lab | Implemented on feature branch; human acceptance/merge pending | 229 local behavior checks + 60 s soak; [validation](TESTING.md#v09-impact-lab-validation), screenshots and feature PR |
+| v0.9 Impact Lab | Implemented on feature branch; human acceptance/merge pending | [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), 229 local behavior checks + 60 s soak, [passing CI](https://github.com/FoxyLight/Crash-Lab/actions/runs/40915139484), [validation](TESTING.md#v09-impact-lab-validation) and screenshots |
 | v0.10 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
 
 When a milestone is merged, update status and evidence here in the same PR; distinguish planned, in progress, tested, and merged.
