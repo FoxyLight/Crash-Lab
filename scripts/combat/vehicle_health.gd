@@ -12,6 +12,8 @@ var is_destroyed: bool = false
 var respawn_remaining: float = 0.0
 var protection_remaining: float = 0.0
 var hit_remaining: float = 0.0
+var waiting_for_spawn: bool = false
+var pending_reset_generation: int = -1
 @onready var vehicle: RigidBody3D = get_parent()
 @onready var driver = vehicle.get_node("DriverInput")
 var meshes: Array[MeshInstance3D] = []
@@ -39,6 +41,7 @@ func take_damage(amount: float) -> void:
 	if health <= 0.0:
 		is_destroyed = true
 		respawn_remaining = respawn_delay
+		pending_reset_generation = -1
 		driver.controls_enabled = false
 		driver.clear_commands()
 		driver.reset_requested = false
@@ -48,15 +51,20 @@ func _physics_process(delta: float) -> void:
 	hit_remaining = maxf(0.0, hit_remaining - delta)
 	protection_remaining = maxf(0.0, protection_remaining - delta)
 	if is_destroyed:
-		respawn_remaining -= delta
+		respawn_remaining = maxf(0.0, respawn_remaining - delta)
 		if respawn_remaining <= 0.0:
-			# Physics integration consumes the reset before controls resume next tick.
-			driver.reset_requested = true
-			is_destroyed = false
-			health = maximum_health
-			protection_remaining = spawn_protection
-			health_changed.emit(health, maximum_health)
-			respawned.emit()
+			waiting_for_spawn = true
+			if pending_reset_generation < 0 and vehicle.is_spawn_clear():
+				pending_reset_generation = vehicle.reset_generation + 1
+				driver.reset_requested = true
+			if pending_reset_generation >= 0 and vehicle.reset_generation >= pending_reset_generation:
+				is_destroyed = false
+				waiting_for_spawn = false
+				health = maximum_health
+				protection_remaining = spawn_protection
+				driver.controls_enabled = true
+				health_changed.emit(health, maximum_health)
+				respawned.emit()
 	else:
 		driver.controls_enabled = true
 	for mesh in meshes:

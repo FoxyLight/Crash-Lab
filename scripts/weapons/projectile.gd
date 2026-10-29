@@ -5,6 +5,7 @@ var velocity: Vector3 = Vector3.ZERO
 var damage: float = 20.0
 var lifetime: float = 2.0
 var shooter_rid: RID
+var shooter_areas: Array[RID] = []
 var age: float = 0.0
 var color: Color = Color("7bffff")
 
@@ -26,7 +27,9 @@ func _physics_process(delta: float) -> void:
 	var excluded: Array[RID] = []
 	if shooter_rid.is_valid():
 		excluded.append(shooter_rid)
-	var query := PhysicsRayQueryParameters3D.create(global_position, end, 3, excluded)
+	excluded.append_array(shooter_areas)
+	var query := PhysicsRayQueryParameters3D.create(global_position, end, 7, excluded)
+	query.collide_with_areas = true
 	query.hit_from_inside = true
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():

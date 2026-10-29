@@ -1,6 +1,7 @@
 extends CanvasLayer
 @export var vehicle: RigidBody3D
 @export var enemy: Node3D
+@export var context_hint: String = "COMBAT ZONE: northeast corner / orange turret"
 @onready var health = vehicle.get_node("DamageReceiver")
 var bar: ProgressBar
 var status: Label
@@ -29,7 +30,7 @@ func _ready() -> void:
 	bar.add_theme_stylebox_override("fill", fill)
 	panel.add_child(bar)
 	hint = Label.new()
-	hint.text = "COMBAT ZONE: northeast corner / orange turret"
+	hint.text = context_hint
 	panel.add_child(hint)
 	hit_overlay = ColorRect.new()
 	hit_overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
@@ -42,7 +43,7 @@ func _process(delta: float) -> void:
 	bar.max_value = health.maximum_health
 	bar.value = health.health
 	fill.bg_color = Color("f26353") if health.health < health.maximum_health * 0.3 else Color("48cd9b")
-	hint.text = "COMBAT ZONE: northeast corner / orange turret"
+	hint.text = context_hint
 	hint.modulate = Color.WHITE
 	if is_instance_valid(enemy):
 		if enemy.is_destroyed:
@@ -52,6 +53,8 @@ func _process(delta: float) -> void:
 			hint.modulate = Color("ffb66e")
 	if health.is_destroyed:
 		status.text = "DESTROYED — Respawn in %.1fs" % maxf(health.respawn_remaining, 0.0)
+		if health.waiting_for_spawn:
+			status.text = "DESTROYED — Waiting for clear spawn"
 	elif health.protection_remaining > 0.0:
 		status.text = "HEALTH %d / %d  |  SPAWN SHIELD" % [health.health, health.maximum_health]
 	else:

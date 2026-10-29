@@ -1,15 +1,18 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene load_steps=8 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_controller.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/vehicles/player_vehicle_input.gd" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/weapons/blaster.tscn" id="3"]
 [ext_resource type="Script" path="res://scripts/combat/vehicle_health.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/combat/vehicle_hurtbox.gd" id="5"]
 [sub_resource type="BoxShape3D" id="Chassis"]
 size = Vector3(1.9, 0.6, 4.1)
+[sub_resource type="BoxShape3D" id="DamageShape"]
+size = Vector3(1.95, 1.1, 4.2)
 
 [node name="MuscleCar" type="RigidBody3D"]
 collision_layer = 2
-collision_mask = 1
+collision_mask = 3
 continuous_cd = true
 can_sleep = false
 script = ExtResource("1")
@@ -26,3 +29,12 @@ shooter = NodePath("..")
 
 [node name="DamageReceiver" type="Node" parent="."]
 script = ExtResource("4")
+
+[node name="Hurtbox" type="Area3D" parent="."]
+collision_layer = 4
+collision_mask = 0
+monitoring = false
+script = ExtResource("5")
+[node name="CollisionShape3D" type="CollisionShape3D" parent="Hurtbox"]
+position = Vector3(0, 0.25, 0)
+shape = SubResource("DamageShape")

@@ -1,0 +1,30 @@
+[gd_scene load_steps=8 format=3]
+[ext_resource type="PackedScene" path="res://scenes/test_arena.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/duel_arena.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/muscle_car.tscn" id="3"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/rival_car.tscn" id="4"]
+[ext_resource type="Script" path="res://scripts/camera/chase_camera.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/debug/combat_hud.gd" id="6"]
+[ext_resource type="Script" path="res://scripts/debug/rival_hud.gd" id="7"]
+[node name="Duel" type="Node3D"]
+[node name="Arena" parent="." instance=ExtResource("1")]
+script = ExtResource("2")
+[node name="Player" parent="." instance=ExtResource("3")]
+position = Vector3(-22, 1.25, 28)
+[node name="Rival" parent="." instance=ExtResource("4")]
+position = Vector3(22, 1.25, -28)
+rotation_degrees = Vector3(0, 180, 0)
+[node name="DriverInput" parent="Rival" node_paths=PackedStringArray("target")]
+target = NodePath("../../Player")
+[node name="Camera" type="Camera3D" parent="." node_paths=PackedStringArray("target")]
+script = ExtResource("5")
+target = NodePath("../Player")
+current = true
+far = 350.0
+[node name="CombatHUD" type="CanvasLayer" parent="." node_paths=PackedStringArray("vehicle")]
+script = ExtResource("6")
+vehicle = NodePath("../Player")
+context_hint = "DUEL — Dodge orange shots; destroy the blue rival"
+[node name="RivalHUD" type="CanvasLayer" parent="." node_paths=PackedStringArray("rival")]
+script = ExtResource("7")
+rival = NodePath("../Rival")

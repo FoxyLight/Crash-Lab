@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/muscle_car.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/enemies/rival_driver.gd" id="2"]
+[node name="RivalCar" instance=ExtResource("1")]
+body_color = Color(0.18, 0.55, 0.85, 1)
+[node name="DriverInput" parent="."]
+script = ExtResource("2")
+[node name="Blaster" parent="."]
+projectile_speed = 28.0
+projectile_damage = 10.0
+projectile_lifetime = 3.0
+projectile_color = Color(1, 0.35, 0.12, 1)
+[node name="DamageReceiver" parent="."]
+maximum_health = 120.0
+respawn_delay = 4.0
+[node name="Nameplate" type="Label3D" parent="."]
+position = Vector3(0, 2.3, 0)
+billboard = 1
+text = "RIVAL"
+font_size = 48
+pixel_size = 0.012
+outline_size = 12
