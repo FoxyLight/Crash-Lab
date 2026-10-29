@@ -1,0 +1,82 @@
+# Public-repository only: standard GitHub-hosted runner, no artifact/cache uploads.
+# The job-level privacy guard is mandatory; if the repository becomes private,
+# stop hosted CI and use tests/run_checks.ps1 locally until costs are reapproved.
+name: Godot headless tests
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: godot-headless-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  godot-tests:
+    if: ${{ github.event.repository.private == false }}
+    runs-on: ubuntu-24.04 # Free standard GitHub-hosted runner for public repositories
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+
+      - name: Install and verify Godot 4.7.2
+        shell: bash
+        run: |
+          set -euo pipefail
+          zip_path="${RUNNER_TEMP}/godot.zip"
+          install_dir="${RUNNER_TEMP}/godot"
+          curl --fail --location --retry 3 --connect-timeout 30 --max-time 300 \
+            "https://github.com/godotengine/godot-builds/releases/download/4.7.2-stable/Godot_v4.7.2-stable_linux.x86_64.zip" \
+            --output "$zip_path"
+          echo "cadd3204e728a35d3f13adb7fd0d7902636b79f6b95c40c265eb73b6c35329e4  $zip_path" | sha256sum --check
+          mkdir -p "$install_dir"
+          unzip -q "$zip_path" -d "$install_dir"
+          godot_path="$install_dir/Godot_v4.7.2-stable_linux.x86_64"
+          chmod +x "$godot_path"
+          version="$("$godot_path" --version)"
+          echo "Godot version: $version"
+          [[ "$version" == 4.7.2.stable.official* ]] || { echo "::error::Unexpected Godot version"; exit 1; }
+          echo "GODOT_PATH=$godot_path" >> "$GITHUB_ENV"
+
+      - name: Import, startup, and all nine smoke suites
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          # As with tests/run_checks.ps1, fail on engine errors even if exit code is zero.
+          run_checked_godot() {
+            local label="$1"
+            shift
+            local output
+            local result=0
+            echo "::group::$label"
+            output="$(timeout 300s "$GODOT_PATH" --headless --path "$GITHUB_WORKSPACE" "$@" 2>&1)" || result=$?
+            printf '%s\n' "$output"
+            if (( result != 0 )) || printf '%s\n' "$output" | grep -Eq '^(SCRIPT ERROR|ERROR):'; then
+              echo "::error::Godot failed: $label (exit status $result)"
+              echo "::endgroup::"
+              return 1
+            fi
+            echo "::endgroup::"
+          }
+
+          run_checked_godot "Editor import" --editor --quit
+          run_checked_godot "Default scene startup" --quit-after 180
+
+          for suite in \
+            driving_smoke weapon_smoke combat_smoke rival_smoke rival_soak \
+            match_smoke audio_smoke loadout_smoke repair_smoke; do
+            run_checked_godot "$suite" --fixed-fps 120 --script "res://tests/${suite}.gd"
+          done
+
+          echo "All Godot headless smoke suites passed."

@@ -13,6 +13,7 @@ The tracked project documentation lives in this repository. Keep relevant docume
 - [Game design](docs/GAME_DESIGN.md): design pillars, implemented features versus experiments.
 - [Physics](docs/PHYSICS.md): driving model, tuning defaults, collisions, recovery.
 - [Testing](docs/TESTING.md): validation commands, test suites, manual playtests.
+- [Free CI workflow](.github/workflows/godot-headless.yml): public-only Godot headless checks on a standard runner, without artifact/cache uploads.
 - [Changelog](CHANGELOG.md): milestone history and unreleased work.
 - [Pull request template](.github/PULL_REQUEST_TEMPLATE.md): required documentation and testing checklist.
 

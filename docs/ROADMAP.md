@@ -13,7 +13,7 @@ Build a small, polished, original Windows vehicular-combat game with responsive 
 - Player blaster and heavy cannon, health/respawn, repair pickups, duel scoring, procedural audio.
 - Nine tracked automated test suites, runnable locally. Historical v0.8 README reports **192 passing behavior checks**; this is not a claim that every later branch has been tested.
 - Tracked architectural, design, physics, and testing documentation.
-- **No GitHub Actions workflow is configured yet.**
+- **v0.8.1 workflow proposed in a feature PR:** public-only Godot headless checks on a free standard runner with no artifacts/caches. Not declared complete until checks pass and the PR is merged.
 
 ## Approved cost policy for future CI (mandatory)
 
@@ -57,7 +57,8 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | --- | --- | --- |
 | v0.8 combat prototype | Implemented | Merged PRs [#1–#8](https://github.com/FoxyLight/Crash-Lab/pulls?q=is%3Apr+is%3Amerged) |
 | Repository documentation foundation | Implemented | [PR #9](https://github.com/FoxyLight/Crash-Lab/pull/9) |
-| Free-only CI policy | Documented in proposed roadmap | This file; no workflow enabled yet |
-| v0.8.1 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
+| Free-only CI policy | Approved and documented | This file and [TESTING](TESTING.md) |
+| v0.8.1 headless CI implementation | In review; not yet accepted | [Workflow](../.github/workflows/godot-headless.yml); must pass on GitHub and be merged |
+| v0.9 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
 
 When a milestone is merged, update status and evidence here in the same PR; distinguish planned, in progress, tested, and merged.

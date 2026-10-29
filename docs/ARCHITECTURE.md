@@ -43,7 +43,7 @@ Crash Lab is a Godot 4 / GDScript, scene-oriented, 3D vehicle-combat prototype. 
 
 ## Known structural limits
 
-There is no local/online human multiplayer, environmental destruction system, impact-severity mechanic, damage attribution for multi-party eliminations, or automatic CI workflow yet. Riderless visual wheels and primitive chassis geometry are intentional prototypes. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
+There is no local/online human multiplayer, environmental destruction system, impact-severity mechanic, damage attribution for multi-party eliminations, or paid CI components. The proposed public-only [Godot headless CI workflow](../.github/workflows/godot-headless.yml) runs existing tests; successful checks still require GitHub verification. Riderless visual wheels and primitive chassis geometry are intentional prototypes. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
 
 ## Documentation maintenance
 
