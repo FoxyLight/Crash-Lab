@@ -12,7 +12,9 @@ func _physics_process(delta: float) -> void:
 		return
 	var back := target.global_basis.z.slide(Vector3.UP).normalized()
 	if back.length_squared() > 0.1:
-		heading = heading.slerp(back, 1.0 - exp(-rotation_response * delta)).normalized()
+		# Same planar smoothing, without slerp's unstable axis near parallel headings.
+		var yaw := lerp_angle(atan2(heading.x, heading.z), atan2(back.x, back.z), 1.0 - exp(-rotation_response * delta))
+		heading = Vector3(sin(yaw), 0.0, cos(yaw))
 	var focus := target.global_position + Vector3.UP * 0.8
 	var desired := focus + heading * distance + Vector3.UP * height
 	var query := PhysicsRayQueryParameters3D.create(focus, desired, 1)

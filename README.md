@@ -1,14 +1,13 @@
-# Crash Lab v0.3
+# Crash Lab v0.4
 
-A small Godot 4 arcade vehicle combat playground for Windows PC. Drive a placeholder muscle car through a runway, slalom, ramps, and solid obstacles, practice on a target dummy, or fight a stationary enemy turret. The player can take projectile damage, be destroyed, and respawn. Moving enemy AI, multiplayer, detailed damage, progression, and environmental destruction are outside this prototype.
+A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a repeatable duel against one blue moving rival. Both vehicles drive through the same rigid-body chassis, exchange projectile fire, collide physically, and respawn after destruction. The original training playground remains available. Multiplayer, detailed damage, progression, and environmental destruction are outside this prototype.
 
 ## Run
 
 1. Open `project.godot` with Godot 4.7.2 (the version validated for this prototype).
-2. Press **F6** with `scenes/main.tscn` open, or **F5** to run the configured main scene.
-3. Start on the left runway. The handling course is to the right; the ramps are near the center.
-4. Drive to the **FIRING RANGE** in the far right lane (x = 48). Approach from the south, near z = 15, and point north toward the red target at z = -12. The backstop is behind it at z = -20. Hold fire: five 20-damage hits destroy the 100 HP target, which respawns after three seconds.
-5. For combat, drive farther north to **COMBAT ZONE** in the northeast corner. The orange turret is at (40, 0, -103); approach near (40, 1, -78), face north, and keep moving while returning fire. Two cover blocks help break line of sight. The original runway spawn remains outside its 38 m detection range.
+2. Press **F5** to launch `scenes/duel.tscn`. Drive, dodge the blue rival's orange shots, and line up your forward blaster. Player health is at the bottom left; rival health/state is at the top right and above the car.
+3. The player starts at (-22, 1.25, 28), and the rival at (22, 1.25, -28). Solid boundaries and three spaced cover blocks provide maneuvering room. There is no active turret in the duel.
+4. To revisit training, open `scenes/main.tscn` and press **F6**. The original runway, slalom, ramps, target dummy, and northeast turret remain there. The right-side firing range is centered on x = 48; the turret is at (40, 0, -103).
 
 No external assets, plugins, or downloads are required. The project uses the Compatibility renderer and Godot Physics at 120 physics ticks per second. Earlier Godot 4 versions have not been validated.
 
@@ -25,7 +24,8 @@ Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are 
 
 ## Structure
 
-- `scenes/main.tscn`: main scene, vehicle, camera, and debug overlay.
+- `scenes/duel.tscn`, `scripts/duel_arena.gd`: default duel with one player, one rival, cover, and boundaries.
+- `scenes/main.tscn`: original v0.3 training scene, vehicle, camera, and debug overlay.
 - `scenes/test_arena.tscn`, `scripts/arena.gd`: sky, lighting, and procedural static arena geometry.
 - `scenes/vehicles/muscle_car.tscn`: reusable rigid chassis and player input provider.
 - `scripts/vehicles/vehicle_controller.gd`: force-based driving, suspension, placeholder visuals, and recovery.
@@ -41,20 +41,45 @@ Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are 
 - `scenes/enemies/stationary_turret.tscn`, `scripts/enemies/stationary_turret.gd`: stationary tracking enemy that reuses target health/respawn and the existing weapon.
 - `scripts/debug/combat_hud.gd`: player health bar, hit overlay, death countdown, and turret warning/status.
 - `tests/combat_smoke.gd`: player damage, cover, destruction, recovery, turret defeat, and repeat combat checks.
+- `scenes/vehicles/rival_car.tscn`, `scripts/enemies/rival_driver.gd`: inherited muscle car with blue visuals and an AI command provider.
+- `scripts/combat/vehicle_hurtbox.gd`: projectile-only area covering the visible body/roof, without changing the physical chassis.
+- `scripts/debug/rival_hud.gd`: duel controls, rival name/health/state, and floating nameplate.
+- `tests/rival_smoke.gd`, `rival_soak.gd`: deterministic duel checks and a one-minute unattended encounter.
+- `tests/run_checks.ps1`: editor/startup validation and all five suites; also rejects Godot runtime errors even when the engine exits with code zero.
+
+## Rival behavior and tuning
+
+The rival inherits the muscle car's physics, weapon, and health components. Its `DriverInput` node runs `rival_driver.gd`, which supplies the existing throttle/brake/steering/fire/reset commands and never reads player input. The vehicle controller still performs all physical movement. The rival has **120 HP**, a **four-second** destruction delay, and **1.5 seconds** of spawn protection. Enemy shots travel at **28 m/s**, deal **10 HP**, and fire at **0.8 shots/s**; player blaster settings are unchanged.
+
+Outside engagement range, or when the player is hidden, destroyed, or protected, it patrols four world-space waypoints. A visible living player within **60 m** triggers pursuit. It slows for turns, aims for **14 m/s** on straights, and reduces speed within a **10 m** following distance. If too close with the barrel off target, it briefly reverses to regain turning room. Shooting requires a clear muzzle-to-player view, range within **35 m**, and a forward aim error of at most **9 degrees**. It has no turret, homing, or predictive aiming.
+
+Three short obstacle rays steer toward the clearer side and reduce speed. Sustained low progress for **two seconds** triggers **1.6 seconds** of reverse recovery. Three failed recovery attempts request a safe reset; sustained rollover also requests a reset after **four seconds**. Ordinary forward progress clears failed attempts. Resets use the physics integration path, never per-frame teleport following. AI state, firing commands, cooldown, and recovery timers clear on respawn.
+
+Tune engagement range, desired speed, following distance, firing range, aim tolerance, fire cadence, obstacle lookahead, stuck delay, reverse duration, rollover delay, failed-attempt count, and patrol points on **Rival → DriverInput**. Patrol points are world positions. Tune enemy projectile settings on **Rival → Blaster** and health/respawn on **Rival → DamageReceiver**. The AI applies `fire_cadence` to its weapon at startup. Restart after changing startup settings.
+
+### Collision, damage, and safe spawning
+
+Both cars use physical layer 2 and now include layer 2 in their collision masks, so collisions transfer momentum instead of allowing cars to pass through. Collisions do not cause health damage. The short chassis collider, mass, center of mass, driving forces, steering, traction, suspension, and damping retain their approved values. Body color is an exported visual setting; the player keeps its original orange default.
+
+The visible roof extends above the physical chassis. A separate damage-only area on layer 3 covers the body/roof so level forward shots can hit the opponent without raising the physical collider. Projectile sweeps include this layer and exclude both the shooter's rigid body and its damage areas. This is a simple box approximation, not detailed damage.
+
+All vehicle reset requests check the spawn chassis shape with a 0.3 m margin against arena/vehicle colliders. Destroyed vehicles wait with controls and firing disabled if their own spawn is occupied. Health and protection restore only after physics integration confirms a completed reset. Move off an occupied spawn to let its owner return; there is no forced overlap or alternate-spawn teleport. Each car returns to its own initial spawn. Manual recovery does not heal. The turret and dummy retain their existing in-place respawn behavior in training.
+
+Camera distance, height, response, and smoothing settings are preserved. Long duel tests exposed a floating-point axis error in planar vector interpolation during heading reversals; the implementation now interpolates the equivalent yaw angle to keep the same smoothing without that error.
 
 ## Combat loop and tuning
 
 The player starts with **100 HP**. Orange turret shots deal **15 HP**, travel at **26 m/s**, and fire at **0.75 shots/s**. The stationary turret smoothly aims at the player's current position without predicting movement. It requires an unobstructed view within **38 m**, alignment, and a **one-second warning** before firing. The HUD announces locking/firing, and the turret has a floating health/status label. Cover, range, player destruction, or spawn protection breaks its lock; reacquiring requires another warning. Projectiles already in flight continue normally.
 
-The turret has **120 HP** (six default blaster hits) and returns **six seconds** after destruction. Its gun hides and stops firing while destroyed. Player death darkens the car, disables driving/firing/reset input, and shows a **three-second respawn countdown**. The wreck retains physical momentum while waiting. Automatic respawn requests the existing physics reset, clearing momentum at the original safe runway spawn and restoring full health with **1.5 seconds of damage protection**. Normal R/D-pad recovery does not restore health. Physical collisions do not cause health damage in this milestone.
+In training, the turret has **120 HP** (six default blaster hits) and returns **six seconds** after destruction. Its gun hides and stops firing while destroyed. Player death darkens the car, disables driving/firing/reset input, and shows a **three-second respawn countdown**. The wreck retains physical momentum while waiting. Automatic respawn requests the existing physics reset, clearing momentum at the player's original spawn and restoring full health with **1.5 seconds of damage protection**, subject to spawn clearance. Normal R/D-pad recovery does not restore health. Physical collisions do not cause health damage in this milestone.
 
 Tune player health, respawn delay, and protection on **MuscleCar → DamageReceiver**. Tune turret health, respawn delay, range, warning time, and aim response on **EnemyTurret**. Open its scene to tune **Head → Blaster** projectile speed, damage, cadence, lifetime, and orange color. Player blaster defaults, all chassis driving parameters, and the camera are preserved. The health component only gates input during destruction and issues the existing reset command; it does not retune physics.
 
 ## Weapon and target tuning
 
-Select **MuscleCar → Blaster** to tune fire rate (7 shots/s), projectile speed (110 m/s), damage (20 HP), and lifetime (2 seconds). Ammo is unlimited. The weapon reads `fire_requested` from the existing input provider and has no recoil or influence on chassis physics. The vehicle physics controller and all established driving settings are unchanged from v0.1.
+Select **Player → Blaster** in the duel (or **MuscleCar → Blaster** in training) to tune fire rate (7 shots/s), projectile speed (110 m/s), damage (20 HP), and lifetime (2 seconds). Ammo is unlimited. The weapon reads `fire_requested` from the input provider and has no recoil or influence on chassis physics. Established player driving and weapon settings are preserved.
 
-Player shots follow the front barrel's forward direction in world space, including chassis pitch on ramps. There is no screen-center aim correction, player turret, homing, inherited chassis velocity, or gravity. Every physics tick sweeps a ray from the previous position to the next, using collision layers 1 (arena/targets/turret) and 2 (vehicles). The firing collider RID is excluded, and rays detect starting inside other solid obstacles. The first solid hit stops the shot. Damage calls `take_damage(amount)` on the collider or its `DamageReceiver` child, allowing health to remain separate from vehicle physics. Shots disappear on impact or expiry. Cyan player and orange enemy tracers are visual; collision uses a zero-width ray.
+Player shots follow the front barrel's forward direction in world space, including chassis pitch on ramps. There is no screen-center aim correction, player turret, homing, inherited chassis velocity, or gravity. Every physics tick sweeps a ray from the previous position to the next, using collision layers 1 (arena/targets/turret), 2 (vehicles), and 3 (damage areas). The firing body and its areas are excluded, and rays detect starting inside other solid obstacles. The first hit stops the shot. Damage calls `take_damage(amount)` on the collider/area or its `DamageReceiver` child, allowing health to remain separate from vehicle physics. Shots disappear on impact or expiry. Cyan player and orange enemy tracers are visual; collision uses a zero-width ray.
 
 Open `scenes/targets/target_dummy.tscn` to tune maximum health (100 HP) and respawn delay (3 seconds). Health and respawn countdown appear above the target. Hits briefly flash white; destruction leaves a dark flattened placeholder and temporarily disables its collider. Respawn restores health, appearance, and collision. Physical car collisions do not invoke damage. Health, destruction, and respawn signals support future HUD or combatants without coupling them to the weapon.
 
@@ -77,24 +102,32 @@ godot --headless --path . --quit-after 180
 godot --headless --path . --fixed-fps 120 --script res://tests/driving_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/weapon_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/combat_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/rival_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/rival_soak.gd
 ```
+
+On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
 
 Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
 
-For v0.3, all 10 original driving checks, 18 weapon checks, and 17 combat checks pass. Weapon checks cover held-fire cadence while accelerating, steering/handbrake compatibility, release, high-speed target hits, hit feedback, thin obstacle blocking, shots starting inside obstacles, shooter exclusion, other vehicle collision, expiry, two destruction/respawn cycles, mounted-weapon aiming through the input provider, cleanup, and physical car-to-target contact without damage. Combat checks cover the safe spawn, acquisition warning, slow enemy projectiles dealing damage, HUD health, recovery without healing, cover, lethal damage/input lock, reset suppression, ignoring destroyed players, safe respawn with restored health/momentum, temporary protection and its expiry, destruction of the turret by the player blaster, no firing while destroyed, restored turret appearance/health, and combat resuming after turret respawn.
+For v0.4, all **73 behavior checks** pass: 10 original driving, 18 weapon, 17 turret/player combat, and 28 new rival checks. The new checks verify launch/training scene composition, physical patrol movement/turning, no unnecessary resets while moving, pursuit/fire gates, cover, both vehicles taking projectile damage, shooter body/area exclusion, player and rival spawn occupancy, disabled destroyed commands, restored AI state, delayed reverse/reset/rollover recovery, physical car contacts without health loss, defeat through the mounted player blaster, and resumed combat after rival respawn. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
 
-The user approved human playtests for v0.1 driving and v0.2 weapons. For v0.3, a graphical Windows launch rendered the combat approach and destroyed-car state; the health bar, damage tint, respawn countdown, turret, cover, and HUD were visually checked. Combat behavior is verified using synthetic input and physics checks. Human testing of dodging, encounter difficulty, warning readability, and the full loop on keyboard/controller remains pending. Automated checks do not establish satisfying combat feel.
+The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns. This checks the default setup without requiring an exact chase trajectory. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
+
+The user approved human playtests through v0.3. A graphical Windows launch of v0.4 rendered the moving blue rival, player, cover, health, floating nameplate, controls, and rival pursuit state. Automated inputs and fixed-step fixtures verify the new behavior. Human v0.4 keyboard/controller chase, dodging, difficulty, obstacle recovery, and repeat combat playtests remain pending.
 
 ### Human playtest checklist
 
-- Enter the combat zone, watch for the locking warning, and dodge orange shots while returning fire.
-- Use cover and distance to break the turret's lock; assess warning readability and difficulty.
-- Destroy the turret, wait for its return, and repeat with keyboard/mouse and a controller.
-- Allow the car to be destroyed; verify the countdown, safe full-health respawn, restored controls, and temporary shield.
-- Confirm the established driving and firing controls remain comfortable.
+- Chase and dodge the blue rival; assess whether pursuit creates opportunities for forward shots.
+- Use cover and distance, then watch it patrol and reacquire you without getting stuck or repeatedly resetting.
+- Destroy the rival and fight it again after respawn with keyboard/mouse and a controller.
+- Let the rival destroy you; verify full-health return, working controls, protection, and renewed combat.
+- Park on a vehicle's spawn during its countdown: it should wait rather than overlap.
+- Collide with the rival; confirm physical weight without health loss and unchanged player handling.
+- Reopen the training scene with F6 and check the previous courses and turret.
 
 ### Known limits
 
-Suspension rays only contact static arena layer 1; tires are visual placeholders without rolling collision or wheel spin. There is no drivetrain/gearing simulation, advanced tire model, or automatic rollover recovery (press reset). The camera checks the desired chase line against the arena; it is a simple ray, not a swept camera volume.
+Suspension rays only contact static arena layer 1; tires are visual placeholders without rolling collision or wheel spin. There is no drivetrain/gearing simulation or advanced tire model. The player uses manual rollover recovery; the AI has a delayed recovery reset. The camera checks the desired chase line against the arena with a simple ray rather than a swept camera volume.
 
-Weapon feedback is simple geometry without audio. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks, with at most one shot per tick. Target/turret respawn restores solid collision in place; move away from their footprints before they return. Projectile nodes and flashes are short lived rather than pooled. The turret has simple tracking and visibility checks rather than predictive aiming or moving AI. There is no armor, collision damage, vehicle deformation, player health regeneration, score, or progression. Human combat feel requires hands-on review.
+Weapon feedback is simple geometry without audio. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks, with at most one shot per tick. Dummy/turret respawn still restores solid collision in place in training; move away from their footprints. Vehicles wait indefinitely for their spawn to clear. Projectile nodes and flashes are short lived rather than pooled. Rival navigation is deliberately local: a waypoint loop, visibility, short obstacle rays, and recovery; it cannot plan around a maze or predict player movement. It may back away or lose contact behind cover. No armor, collision damage, deformation, score, rounds, progression, or new weapons are included. Human combat feel requires hands-on review.

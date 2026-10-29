@@ -26,6 +26,9 @@ func _fire() -> void:
 	projectile.lifetime = projectile_lifetime
 	projectile.color = projectile_color
 	projectile.shooter_rid = shooter.get_rid() if is_instance_valid(shooter) else RID()
+	if is_instance_valid(shooter):
+		for area in shooter.find_children("*", "Area3D", true, false):
+			projectile.shooter_areas.append(area.get_rid())
 	get_tree().current_scene.add_child(projectile)
 	projectile.global_transform = muzzle.global_transform
 	var flash := Flash.new()

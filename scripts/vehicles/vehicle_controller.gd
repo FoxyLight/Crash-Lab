@@ -1,4 +1,5 @@
 extends RigidBody3D
+@export var body_color: Color = Color("d85828")
 ## Forces act at four tire contacts; only recovery replaces the body transform.
 @export_group("Powertrain")
 @export var engine_force: float = 15000.0
@@ -29,9 +30,20 @@ var grounded_wheels: int = 0
 var signed_speed: float = 0.0
 var current_steering: float = 0.0
 var spawn_transform: Transform3D
+var reset_generation: int = 0
 var wheel_mounts: Array[Vector3] = [Vector3(-0.88, 0, -1.35), Vector3(0.88, 0, -1.35), Vector3(-0.88, 0, 1.25), Vector3(0.88, 0, 1.25)]
 var wheels: Array[Node3D] = []
 var wheel_lengths: Array[float] = [0.65, 0.65, 0.65, 0.65]
+
+func is_spawn_clear() -> bool:
+	var query := PhysicsShapeQueryParameters3D.new()
+	query.shape = $CollisionShape3D.shape
+	query.transform = spawn_transform
+	query.transform.origin.y = reset_height
+	query.margin = 0.3
+	query.collision_mask = 3
+	query.exclude = [get_rid()]
+	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
 
 func _ready() -> void:
 	mass = vehicle_mass
@@ -43,7 +55,7 @@ func _ready() -> void:
 	_build_visuals()
 
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
-	if driver.reset_requested or state.transform.origin.y < fall_reset_height:
+	if (driver.reset_requested or state.transform.origin.y < fall_reset_height) and is_spawn_clear():
 		driver.reset_requested = false
 		var recovery := spawn_transform
 		recovery.origin.y = reset_height
@@ -51,6 +63,7 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		state.linear_velocity = Vector3.ZERO
 		state.angular_velocity = Vector3.ZERO
 		current_steering = 0.0
+		reset_generation += 1
 		return
 	var basis := state.transform.basis
 	var forward := -basis.z
@@ -99,7 +112,7 @@ func _process(_delta: float) -> void:
 		wheels[i].rotation.y = current_steering if i < 2 else 0.0
 
 func _build_visuals() -> void:
-	_box(Vector3(1.95, 0.55, 4.2), Vector3(0, 0.0, 0), Color("d85828"))
+	_box(Vector3(1.95, 0.55, 4.2), Vector3(0, 0.0, 0), body_color)
 	_box(Vector3(1.65, 0.55, 1.6), Vector3(0, 0.5, 0.25), Color("263b48"))
 	_box(Vector3(1.8, 0.15, 0.15), Vector3(0, 0.0, -2.12), Color("e8dcab"))
 	_box(Vector3(1.8, 0.15, 0.15), Vector3(0, 0.0, 2.12), Color("922d2e"))
