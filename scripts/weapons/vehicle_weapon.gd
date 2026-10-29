@@ -12,14 +12,24 @@ const Flash = preload("res://scripts/weapons/hit_flash.gd")
 @export_range(0.05, 10.0, 0.05) var projectile_lifetime: float = 2.0
 @onready var muzzle: Marker3D = $Muzzle
 var cooldown: float = 0.0
+var firing_enabled: bool = true
+
+func stop_firing() -> void:
+	firing_enabled = false
+	cooldown = 0.0
+	set_physics_process(false)
 
 func _physics_process(delta: float) -> void:
+	if not firing_enabled:
+		return
 	cooldown = maxf(cooldown - delta, 0.0)
 	if is_instance_valid(input_provider) and input_provider.fire_requested and cooldown <= 0.0:
 		_fire()
 		cooldown = 1.0 / maxf(fire_rate, 0.1)
 
 func _fire() -> void:
+	if not firing_enabled:
+		return
 	var projectile := Projectile.new()
 	projectile.velocity = -muzzle.global_basis.z * projectile_speed
 	projectile.damage = projectile_damage

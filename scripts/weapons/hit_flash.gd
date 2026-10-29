@@ -3,6 +3,7 @@ extends MeshInstance3D
 var remaining: float = 0.12
 
 func _ready() -> void:
+	add_to_group("combat_effects")
 	var sphere := SphereMesh.new()
 	sphere.radius = 0.18
 	sphere.height = 0.36

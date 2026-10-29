@@ -8,6 +8,12 @@ var steering: float = 0.0
 var handbrake: bool = false
 var reset_requested: bool = false
 
+func stop_commands() -> void:
+	controls_enabled = false
+	clear_commands()
+	reset_requested = false
+	set_physics_process(false)
+
 func _physics_process(_delta: float) -> void:
 	if not controls_enabled:
 		clear_commands()
