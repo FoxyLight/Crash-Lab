@@ -34,6 +34,8 @@ func _ready() -> void:
 		add_child(voice)
 		ui_voices.append(voice)
 	for node in get_parent().find_children("*", "", true, false):
+		if node.has_signal("collected") and node.has_method("try_collect"):
+			node.collected.connect(_on_repair_collected)
 		if node.has_signal("shot_fired") and node.has_signal("projectile_impacted"):
 			node.shot_fired.connect(_on_shot.bind(node))
 			node.projectile_impacted.connect(_on_impact)
@@ -122,6 +124,9 @@ func _on_shot(weapon: Node3D) -> void:
 	if cue == &"":
 		cue = &"player_shot" if weapon.shooter == player else &"enemy_shot"
 	play_cue(cue, weapon.muzzle.global_position)
+
+func _on_repair_collected(actor: RigidBody3D, _amount: float) -> void:
+	play_cue(&"repair", actor.global_position, actor != player)
 
 func _on_impact(location: Vector3) -> void:
 	if impact_cooldown <= 0.0:

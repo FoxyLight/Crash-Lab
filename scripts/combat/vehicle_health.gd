@@ -55,6 +55,16 @@ func take_damage(amount: float) -> void:
 		driver.reset_requested = false
 		destroyed.emit()
 
+func restore_health(amount: float) -> float:
+	if not combat_active or is_destroyed or not is_finite(amount) or amount <= 0.0:
+		return 0.0
+	var before := health
+	health = minf(maximum_health, health + amount)
+	var restored := maxf(0.0, health - before)
+	if restored > 0.0:
+		health_changed.emit(health, maximum_health)
+	return restored
+
 func _physics_process(delta: float) -> void:
 	if not combat_active:
 		return
