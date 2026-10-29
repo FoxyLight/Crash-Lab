@@ -6,6 +6,7 @@ var damage: float = 20.0
 var lifetime: float = 2.0
 var shooter_rid: RID
 var age: float = 0.0
+var color: Color = Color("7bffff")
 
 func _ready() -> void:
 	add_to_group("projectiles")
@@ -15,7 +16,7 @@ func _ready() -> void:
 	visual.mesh = shape
 	var material := StandardMaterial3D.new()
 	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.albedo_color = Color("7bffff")
+	material.albedo_color = color
 	visual.material_override = material
 	add_child(visual)
 
@@ -31,6 +32,10 @@ func _physics_process(delta: float) -> void:
 	if not hit.is_empty():
 		if hit.collider.has_method("take_damage"):
 			hit.collider.take_damage(damage)
+		else:
+			var receiver = hit.collider.get_node_or_null("DamageReceiver")
+			if receiver != null and receiver.has_method("take_damage"):
+				receiver.take_damage(damage)
 		var flash := Flash.new()
 		get_tree().current_scene.add_child(flash)
 		flash.global_position = hit.position

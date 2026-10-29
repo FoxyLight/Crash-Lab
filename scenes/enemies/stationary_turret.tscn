@@ -1,0 +1,34 @@
+[gd_scene load_steps=5 format=3]
+[ext_resource type="Script" path="res://scripts/enemies/stationary_turret.gd" id="1"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/blaster.tscn" id="2"]
+[sub_resource type="BoxShape3D" id="Shape"]
+size = Vector3(3, 2.4, 3)
+[sub_resource type="BoxMesh" id="Mesh"]
+size = Vector3(3, 1.2, 3)
+[node name="EnemyTurret" type="StaticBody3D"]
+script = ExtResource("1")
+maximum_health = 120.0
+respawn_delay = 6.0
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 1.2, 0)
+shape = SubResource("Shape")
+[node name="Body" type="MeshInstance3D" parent="."]
+position = Vector3(0, 0.6, 0)
+mesh = SubResource("Mesh")
+[node name="HealthLabel" type="Label3D" parent="."]
+position = Vector3(0, 3.4, 0)
+billboard = 1
+font_size = 56
+pixel_size = 0.012
+outline_size = 12
+[node name="Head" type="Node3D" parent="."]
+position = Vector3(0, 1.6, 0)
+[node name="Blaster" parent="Head" node_paths=PackedStringArray("input_provider", "shooter") instance=ExtResource("2")]
+position = Vector3(0, 0, -0.8)
+input_provider = NodePath("../..")
+shooter = NodePath("../..")
+fire_rate = 0.75
+projectile_speed = 26.0
+projectile_damage = 15.0
+projectile_lifetime = 3.0
+projectile_color = Color(1, 0.35, 0.12, 1)
