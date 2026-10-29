@@ -1,7 +1,8 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Script" path="res://scripts/vehicles/vehicle_controller.gd" id="1"]
 [ext_resource type="Script" path="res://scripts/vehicles/player_vehicle_input.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/weapons/blaster.tscn" id="3"]
 [sub_resource type="BoxShape3D" id="Chassis"]
 size = Vector3(1.9, 0.6, 4.1)
 
@@ -17,3 +18,7 @@ shape = SubResource("Chassis")
 
 [node name="DriverInput" type="Node" parent="."]
 script = ExtResource("2")
+
+[node name="Blaster" parent="." node_paths=PackedStringArray("input_provider", "shooter") instance=ExtResource("3")]
+input_provider = NodePath("../DriverInput")
+shooter = NodePath("..")

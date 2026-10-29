@@ -18,6 +18,14 @@ func _ready() -> void:
 	_label("OPEN RUNWAY", Vector3(-25, 0.04, 35))
 	_label("HANDLING", Vector3(20, 0.04, 35))
 	_label("RAMPS", Vector3(0, 0.04, -36))
+	_label("FIRING RANGE", Vector3(48, 0.04, 32))
+	_block("RangeBackstop", Vector3(14, 6, 1), Vector3(48, 3, -20), Color("617c85"))
+	for i in range(5):
+		_block("RangeMark", Vector3(0.2, 0.015, 3), Vector3(48, 0.02, 24 - i * 7), Color("7bcccc"), false)
+	var target = preload("res://scenes/targets/target_dummy.tscn").instantiate()
+	target.name = "TargetDummy"
+	target.position = Vector3(48, 0, -12)
+	add_child(target)
 
 func _block(title: String, size: Vector3, location: Vector3, color: Color, solid: bool = true, tilt: Vector3 = Vector3.ZERO) -> void:
 	var body := StaticBody3D.new() if solid else Node3D.new()
