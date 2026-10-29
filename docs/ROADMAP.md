@@ -62,7 +62,7 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | Free-only CI policy | Approved and documented | This file and [TESTING](TESTING.md) |
 | v0.8.1 headless CI implementation | Implemented on merged main | Commit `9c0a242`; [workflow](../.github/workflows/godot-headless.yml) |
 | v0.9 Impact Lab | Merged | [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), `cb76c23`, [validation](TESTING.md#v09-playtest-refinement-validation) |
-| v0.10 Local Multiplayer | Implemented on feature branch; human acceptance/merge pending | 326 local checks + soak, [validation and performance](TESTING.md#v010-local-multiplayer-validation), split-screen screenshots and feature PR |
+| v0.10 Local Multiplayer | Implemented on feature branch; human acceptance/merge pending | [PR #13](https://github.com/FoxyLight/Crash-Lab/pull/13), 326 local checks + soak, [passing CI](https://github.com/FoxyLight/Crash-Lab/actions/runs/40936246949), [validation/performance](TESTING.md#v010-local-multiplayer-validation) and screenshots |
 | v0.11 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
 
 When a milestone is merged, update status and evidence here in the same PR; distinguish planned, in progress, tested, and merged.
