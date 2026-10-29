@@ -1,4 +1,4 @@
-[gd_scene load_steps=11 format=3]
+[gd_scene load_steps=13 format=3]
 [ext_resource type="PackedScene" path="res://scenes/test_arena.tscn" id="1"]
 [ext_resource type="Script" path="res://scripts/duel_arena.gd" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/vehicles/player_car.tscn" id="3"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" path="res://scripts/match/duel_match.gd" id="8"]
 [ext_resource type="Script" path="res://scripts/debug/match_hud.gd" id="9"]
 [ext_resource type="Script" path="res://scripts/audio/combat_audio.gd" id="10"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/repair_pickup.tscn" id="11"]
+[ext_resource type="Script" path="res://scripts/debug/repair_feedback.gd" id="12"]
 [node name="Duel" type="Node3D"]
 [node name="Arena" parent="." instance=ExtResource("1")]
 script = ExtResource("2")
@@ -32,6 +34,17 @@ context_hint = "DUEL — Dodge orange shots; destroy the blue rival"
 script = ExtResource("8")
 player = NodePath("../Player")
 rival = NodePath("../Rival")
+
+[node name="RepairPickups" type="Node3D" parent="."]
+[node name="WestRepair" parent="RepairPickups" instance=ExtResource("11")]
+position = Vector3(-45, 0, 10)
+[node name="EastRepair" parent="RepairPickups" instance=ExtResource("11")]
+position = Vector3(35, 0, -35)
+[node name="SouthRepair" parent="RepairPickups" instance=ExtResource("11")]
+position = Vector3(0, 0, 40)
+[node name="RepairFeedback" type="CanvasLayer" parent="." node_paths=PackedStringArray("player")]
+script = ExtResource("12")
+player = NodePath("../Player")
 
 [node name="CombatAudio" type="Node3D" parent="." node_paths=PackedStringArray("player")]
 script = ExtResource("10")

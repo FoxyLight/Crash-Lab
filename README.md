@@ -1,8 +1,8 @@
-# Crash Lab v0.7
+# Crash Lab v0.8
 
 A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available. Approved driving, camera, player weapon, and rival AI settings are preserved.
 
-v0.7 adds a player-only heavy cannon and keyboard/controller weapon switching alongside the approved blaster. Procedural combat audio and all approved driving, rival, and match settings remain available unchanged.
+v0.8 adds fixed respawning repair pickups for player and rival. Both player weapons, procedural combat audio, and all approved driving, rival, damage, maximum-health, and match settings remain unchanged. Pickup healing is the new combat variable.
 
 ## Run
 
@@ -13,6 +13,7 @@ v0.7 adds a player-only heavy cannon and keyboard/controller weapon switching al
 5. After a result, press **Enter** or **controller Start/Menu** to play again. Release the button before another deliberate restart press. R/D-pad remains vehicle recovery during play and never resets scores or restores health.
 6. Use your normal Windows sound output. Press **M** or **D-pad down** to mute/unmute at any time, including the result screen. Audio status is shown at the bottom right; mute persists across scene restarts until the app closes.
 7. Press **Q / controller Y (north face)** to cycle weapons, or **1 / 2** to select blaster/cannon directly. The left-side loadout HUD shows the selected weapon and readiness. Fire with the existing LMB/F/RB controls. Both weapons have unlimited ammunition.
+8. Drive through a **green repair cross** when damaged to restore up to **25 HP**. Used pads turn gray and show their **12-second** return countdown. Full-health cars leave the pickup available; either living vehicle can collect. No button is required.
 
 No external assets, plugins, or downloads are required. The project uses the Compatibility renderer and Godot Physics at 120 physics ticks per second. Earlier Godot 4 versions have not been validated.
 
@@ -30,6 +31,29 @@ No external assets, plugins, or downloads are required. The project uses the Com
 | Select blaster / cannon | 1 / 2 | — |
 
 Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are editable in **Project Settings → Input Map**. Opposite pedal input brakes before changing direction. Releasing the pedals allows the car to coast.
+
+## Arena repair pickups
+
+| Scene | Pad | World position |
+| --- | --- | --- |
+| Duel | West repair | (-45, 0, 10) |
+| Duel | East repair | (35, 0, -35) |
+| Duel | South repair | (0, 0, 40) |
+| Training | Repair practice | (-48, 0, 28), labeled on the ground nearby |
+
+Each reusable `scenes/pickups/repair_pickup.tscn` instance exposes **Repair Amount** (25 HP), **Respawn Delay** (12 seconds), and **Collection Radius** (2 m). Restart after editing startup shape settings. Placements are clear of vehicle spawns, solid cover, and original training routes. Pads have no solid collision or physical force and cannot block or push a car.
+
+An available pad queries actual physical vehicle overlaps every physics step. The upright cylindrical collection volume is 2.5 m high; its radius is measured around the pad, and any overlapping part of the physical chassis can trigger collection. Areas/hurtboxes, projectiles, static obstacles, destroyed vehicles, and combat-disabled vehicles cannot collect. Full-health vehicles are filtered out before choosing a collector. If several eligible vehicles overlap, the nearest chassis center in 3D wins. Exact distance ties use lexical scene paths (in the duel, Player precedes Rival). Body candidates are deduplicated, and availability is disabled before health callbacks, preventing double/reentrant collection.
+
+The health component's `restore_health(amount)` accepts only finite positive amounts for living, combat-active vehicles, clamps to that vehicle's maximum, and returns actual restored health. A partial repair near full health consumes the pad but reports only the restored amount. No actual restoration means no consumption or timer reset. The API emits a health update without damage, destruction, respawn, or score events. Shield time, loadout, cooldowns, and reset commands are untouched. It cannot revive a wreck.
+
+Used pads hide their green cross, turn gray, and display a return countdown. A full-health car may stay on an available pad and collect if later damaged. A damaged car camping an unavailable pad may collect immediately when it returns; the 12-second delay limits this intentional point-control behavior. Repair and damage follow normal physics processing order: a vehicle already destroyed when the pad evaluates is ineligible. The approved same-tick elimination rules are unchanged.
+
+Player collection shows a brief **REPAIRED +actual HP** message above the health bar and a centered repair cue. Rival collection shows a separate world message above that car and a positional cue. Restoring health does not trigger existing hit/damage sounds or reuse respawn audio. M/D-pad down mute still applies. The rival can collect incidentally but its navigation has no pickup-seeking behavior.
+
+At a duel result, pads disable collection and return timers, health rejects restoration, and temporary repair messages clear. Even queued collection calls and pickups added to an already finished duel are blocked. Scene restart recreates every pad available with clean timers and observers. Training has no match controller, so its demo pickup returns continuously.
+
+The default 25 HP / 12-second values and placements are starting points for human tactical/balance playtesting. No ammo, armor, shield, speed, random-drop, inventory, or automatic health-regeneration system is included.
 
 ## Player loadout
 
@@ -64,13 +88,14 @@ The same scene-local audio observer serves both duel and training. Existing weap
 | Accepted player damage | Centered damage cue |
 | Destruction | World destruction burst |
 | Respawn | World cue for other actors; centered cue for the player |
+| Repair pickup | Distinct centered player cue or world-positioned rival cue |
 | Victory / Defeat / Draw | Three distinct centered result phrases |
 
 Protected/rejected damage does not trigger a damage cue, and healing does not create false hit feedback. Muzzle and impact flashes remain as before. Match completion stops combat sounds and plays its result cue once; late combat cues are blocked until restart. Muting stops current voices immediately and suppresses new playback without changing gameplay. Unmuting does not replay an old result.
 
 Select **CombatAudio** in either scene to tune startup **Volume Db** (default -16 dB), **World Voice Limit** (12), and **UI Voice Limit** (3). Restart after changing startup settings. Spatial sounds use distance attenuation with a 100 m cutoff and a close-range gain cap. Impact bursts are limited to one cue per 0.04 seconds. Pools reuse existing players and replace the oldest slot when full; there is no unbounded node allocation during sustained fire.
 
-`sound_bank.gd` generates eleven original mono 22,050 Hz, 16-bit PCM cues with short envelopes, controlled sample peaks, and no external assets. Streams are cached once per app session. These are intentionally simple synthesized placeholders. There is no music, engine loop, tire/collision audio, acoustic occlusion, or volume/settings menu. Perceived loudness, positioning, fatigue, and cue quality need human listening on speakers/headphones.
+`sound_bank.gd` generates twelve original mono 22,050 Hz, 16-bit PCM cues with short envelopes, controlled sample peaks, and no external assets. Streams are cached once per app session. These are intentionally simple synthesized placeholders. There is no music, engine loop, tire/collision audio, acoustic occlusion, or volume/settings menu. Perceived loudness, positioning, fatigue, and cue quality need human listening on speakers/headphones.
 
 ## Match rules and lifecycle
 
@@ -120,7 +145,10 @@ On completion the controller calls the participants' explicit `finish_combat()` 
 - `scenes/vehicles/player_car.tscn`, `scenes/weapons/heavy_cannon.tscn`: player-specific inherited loadout and configurable cannon; rival inheritance stays unchanged.
 - `scripts/weapons/player_loadout.gd`, `scripts/debug/loadout_hud.gd`: selection, per-tick firing ownership, lifecycle handling, and selected-weapon/cooldown feedback.
 - `tests/loadout_smoke.gd`: mapped switching, firing exclusivity, cooldowns, cannon collisions/audio, and lifecycle checks.
-- `tests/run_checks.ps1`: editor/startup validation and all eight suites; also rejects Godot runtime errors even when the engine exits with code zero.
+- `scenes/pickups/repair_pickup.tscn`, `scripts/pickups/repair_pickup.gd`: reusable non-solid repair pad, overlap arbitration, countdown, and match-end guard.
+- `scripts/debug/repair_feedback.gd`: actual-amount player/rival messages, independent of existing weapon/score HUD.
+- `tests/repair_smoke.gd`: restoration API, real physics overlaps, simultaneous collectors, repeated collection/respawn, audio, match shutdown, reload, and training checks.
+- `tests/run_checks.ps1`: editor/startup validation and all nine suites; also rejects Godot runtime errors even when the engine exits with code zero.
 
 ## Rival behavior and tuning
 
@@ -182,29 +210,30 @@ godot --headless --path . --fixed-fps 120 --script res://tests/rival_soak.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/match_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/audio_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/loadout_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/repair_smoke.gd
 ```
 
 On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
 
 Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
 
-For v0.7, all **162 behavior checks** pass: the previous 131 plus 31 loadout checks. New checks cover default player-only loadout, preserved blaster/rival tuning, mapped Q/1/2/controller Y events, held-cycle suppression, simultaneous-input precedence, selected-only fire, heavy projectile data/audio, independent holstered cooldowns, no switch-based bypass, held-fire transitions and one-shot-per-tick ownership, cannon damage/self-exclusion/thin-obstacle/lifetime behavior, manual recovery, HUD, destruction/respawn, mute, permanent match-end shutdown of both slots, repeated clean restarts, and training compatibility. Existing audio waveform checks also cover the new heavy cue without altering the original cue recipes. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
+For v0.8, all **192 behavior checks** pass: the previous 162 plus 30 repair checks. New checks cover the distinct repair waveform, finite positive/clamped/fractional restoration, accurate return values, no damage/scoring/state side effects, player/rival maxima, full-health overlaps, changing eligibility while parked, atomic callback exclusion, real drive-through collection, exact one-collector distance/tie rules, full-health filtering, non-vehicle/area rejection, partial-repair HUD and centered/world audio, repeated returns, mute, no revival, stopped results/late callbacks, pickups added after completion, clean repeated restart, and continuous training repairs. Existing audio checks also validate the new waveform without changing previous cues. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
 
 The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns, producing a 0–2 score. It verifies score/state consistency in addition to the original movement and stability criteria; the default encounter remains Playing at 60 seconds. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
 
-The user approved human playtests through v0.6. Headless checks validate mappings, waveforms, and audio dispatch without device playback. A graphical Windows launch of v0.7 rendered the loadout HUD, visible weapon change, violet cannon projectile, and cooldown countdown and exercised the heavy shot playback path without reported errors. Synthetic input tests verify selection and mute mappings. Physical controller ergonomics, listening quality, and whether both weapons are worthwhile in a duel remain pending human checks.
+The user approved human playtests through v0.7. Headless checks validate physics overlaps, mappings, waveforms, and audio dispatch without device playback. A graphical Windows launch of v0.8 rendered available green pads, gray countdown state, actual player health restoration, separate rival world repair feedback, and result cleanup, while exercising the repair playback paths without reported errors. These verify behavior and presentation, not tactical quality. Human driving/controller collection, placement readability, camping balance, and listening checks remain pending.
 
 ### Human playtest checklist
 
-- Switch with Q/1/2 and physical controller Y while steering, braking, and holding fire.
-- Distinguish the weapons by barrel, HUD, projectile color/size, and sound.
-- Try rapid switching during cooldown; verify no double shot or cooldown reset exploit.
-- Use both weapons through complete duels and record balance feedback on the cannon; avoid retuning the approved blaster/rival as a workaround.
-- Verify respawn returns to blaster and full match restart resets the loadout cleanly.
-- Revisit training, mute controls, and match results; confirm the approved driving and combat remain comfortable.
+- Find and drive over green repair pads using keyboard/controller; check readability at driving speed.
+- Confirm one bounded repair per collection, partial healing near maximum, and no consumption at full health.
+- Let the rival collect incidentally; check its message/cue cannot be mistaken for your own repair.
+- Wait through a return countdown and try camping or contesting a pad; assess whether this creates movement decisions or excessive stalling.
+- Finish/restart matches and revisit training; check pad lifecycle and mute remain reliable.
+- Confirm the approved driving, weapon switching, rival, and match behavior still feel right.
 
 ### Known limits
 
 Suspension rays only contact static arena layer 1; tires are visual placeholders without rolling collision or wheel spin. There is no drivetrain/gearing simulation or advanced tire model. The player uses manual rollover recovery; the AI has a delayed recovery reset. The camera checks the desired chase line against the arena with a simple ray rather than a swept camera volume.
 
-Visual feedback remains simple geometry; audio is procedural placeholder synthesis. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks. Dummy/turret respawn restores solid collision in place in training; non-final vehicle respawns wait for spawn clearance. Rival navigation is local rather than a maze planner. Match scores are in-memory only and reset on scene reload. The player loadout has exactly two unlimited-ammo slots; cannon values are provisional. No splash damage, charge, recoil forces, AI weapon switching, pickups, ammo/reload, menu, progression, or multiplayer is added. Sound lacks wall occlusion, and voice limits can truncate older sounds. Human balance and listening tests remain necessary.
+Visual feedback remains simple geometry; audio is procedural placeholder synthesis. Projectiles use zero-width sweeps against current collider positions, and fire cadence is quantized to physics ticks. Dummy/turret respawn restores solid collision in place in training; non-final vehicle respawns wait for spawn clearance. Rival navigation remains local, with no pickup seeking. Repair pads query up to 32 body-shape overlaps per tick, sufficient for this two-car arena, and exact distance ties favor lexical scene paths. Pickups are fixed and their radius/repair/delay values are provisional; no ammo/armor/shield pickups, regeneration, inventory, random drops, AI weapon switching, progression, or multiplayer is added. Sound lacks wall occlusion and bounded pools can truncate older cues. Human tactical/balance and listening tests remain necessary.
