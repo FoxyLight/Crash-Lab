@@ -26,6 +26,9 @@ func _ready() -> void:
 	target.name = "TargetDummy"
 	target.position = Vector3(48, 0, -12)
 	add_child(target)
+	_label("COMBAT ZONE", Vector3(40, 0.04, -75))
+	_block("CombatCover", Vector3(4, 3, 2), Vector3(30, 1.5, -95), Color("617c85"))
+	_block("CombatCover", Vector3(4, 3, 2), Vector3(51, 1.5, -82), Color("617c85"))
 
 func _block(title: String, size: Vector3, location: Vector3, color: Color, solid: bool = true, tilt: Vector3 = Vector3.ZERO) -> void:
 	var body := StaticBody3D.new() if solid else Node3D.new()
