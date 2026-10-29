@@ -38,6 +38,7 @@ var wheel_lengths: Array[float] = [0.65, 0.65, 0.65, 0.65]
 
 func finish_combat() -> void:
 	combat_active = false
+	$ImpactDetector.reset_tracking()
 	driver.stop_commands()
 	$DamageReceiver.finish_combat()
 	var loadout = get_node_or_null("Loadout")
@@ -80,7 +81,9 @@ func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 		state.angular_velocity = Vector3.ZERO
 		current_steering = 0.0
 		reset_generation += 1
+		$ImpactDetector.reset_tracking()
 		return
+	$ImpactDetector.sample(state)
 	var basis := state.transform.basis
 	var forward := -basis.z
 	signed_speed = state.linear_velocity.dot(forward)

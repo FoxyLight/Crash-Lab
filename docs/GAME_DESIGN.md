@@ -21,11 +21,20 @@ The default duel pits the player against one moving AI rival. Drive and fire, de
 
 Current scenes, tuning, controls, and limitations are described in [README](../README.md).
 
-## Design hypotheses to test (not implemented)
+## v0.9 collision decisions (implemented, human acceptance pending)
+
+- **Goal:** make speed and collision angle readable without making steering a chore. Severity uses relative normal contact speed; a fast glancing scrape can be minor while two approaching cars produce a major crash. A perpendicular side ram can still be major. We deliberately do not assign arbitrary multipliers by bumper/side location.
+- **Feedback:** distinct procedural clatter/crunch/thump, severity-scaled short geometric sparks, and bounded decaying camera offsets for moderate/major collisions involving the followed car. No continuous steering penalty, time slowdown, new control, or collision health damage. Weapon damage and match elimination rules remain unchanged.
+- **Stability choice:** retain existing physics defaults and ship extra collision impulses **disabled**. Optional planar/yaw exaggeration is implemented and bounded for later comparisons. No hands-on evidence yet justifies enabling it by default.
+- **Noise control:** ignore support normals (including landings), tiny scrapes, resting contact and repeated pushing within the same contact episode. Prefer missing a small bump over continuous crash feedback on ordinary ground. No extra visual flash is added; existing damage feedback stays readable.
+- **Evidence:** actual rigid-body tests distinguish head-on (~38.53 m/s), rear-end (~11.55 m/s), and glancing (~3.64 m/s), preserve health, and pass recovery/lifecycle regressions. Graphical inspection confirms sparks and bounded cleanup. These results establish behavior, not satisfying crash feel.
+- **Revisit after playtest:** adjust speed thresholds, cue balance and shake strength first. Consider low enabled exaggeration only if it adds weight without spinning, lift, loss of control or multiplayer unfairness. Keep collision damage absent until a separately approved design.
+
+## Design hypotheses to test
 
 | Hypothesis | Question to answer through playtests |
 | --- | --- |
-| Impact Lab | Can impact telemetry, modest exaggeration, and quick recovery produce memorable rams without ruining steering? |
+| Impact Lab (implemented; acceptance pending) | Do the current feedback and optional modest exaggeration produce memorable rams without ruining steering? |
 | Destruction Lab | Do breakable objects and an arena hazard meaningfully change player decisions? |
 | Signature weapons | Can a unique special be powerful yet avoidable and legible during high-speed combat? |
 | Local multiplayer | Do combat camera, controller bindings, respawns, and collision reactions remain fair with two humans? |

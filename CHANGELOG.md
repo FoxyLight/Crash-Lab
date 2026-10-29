@@ -4,11 +4,20 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 
 ## Unreleased
 
-### v0.8.1: Free standard-runner Godot CI (proposed)
+### v0.9: Impact Lab (feature branch; acceptance pending)
+- Add reusable GodotPhysics3D contact telemetry and configurable 1.5/5/12 m/s minor/moderate/major normal closing-speed thresholds; ignore support contacts and coalesce sustained collisions and vehicle pairs.
+- Add original severity-specific crash cues, bounded short spark bursts and restrained camera offsets. Preserve approved handling/follow defaults, weapons, health, repair, AI and scoring; no collision health damage.
+- Add optional one-shot planar/yaw exaggeration, disabled by default, capped at 700 N·s linear and 180 kg·m²/s angular impulse.
+- Clear impact state on recovery/destruction/respawn/finish/restart; stop crash effects at results.
+- Add 37 impact checks to local/approved free CI runners; all 229 local behavior checks and the 60-second soak pass on Godot 4.7.2. Include graphical collision/result screenshots and complete design/physics/architecture/testing documentation. Human Windows/controller collision and listening acceptance is pending.
+
+## v0.8.1 — Free development foundation (merged at `9c0a242`)
+
+### Free standard-runner Godot CI
 - Add a public-repository-only GitHub Actions workflow using a single free standard Ubuntu runner and pinned official Godot 4.7.2 binary with SHA-256 verification.
 - Execute editor import, default scene startup, and the nine existing smoke test suites; fail on runtime errors or nonzero exits.
 - Add bounded job/command timeouts, read-only permissions, and redundant-run cancellation without uploading artifacts or caches.
-- Retain local Windows Godot testing and document private-repository fail-closed behavior. CI passing and milestone completion require evidence from the GitHub PR checks.
+- Retain local Windows Godot testing and document private-repository fail-closed behavior. Current CI success requires evidence from each commit's GitHub checks.
 
 ### Development roadmap and cost guardrails
 - Track the proposed v0.8.1–v0.13 milestone sequence in `docs/ROADMAP.md`.

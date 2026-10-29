@@ -48,7 +48,7 @@ jobs:
           [[ "$version" == 4.7.2.stable.official* ]] || { echo "::error::Unexpected Godot version"; exit 1; }
           echo "GODOT_PATH=$godot_path" >> "$GITHUB_ENV"
 
-      - name: Import, startup, and all nine smoke suites
+      - name: Import, startup, and all ten smoke suites
         shell: bash
         run: |
           set -euo pipefail
@@ -75,7 +75,7 @@ jobs:
 
           for suite in \
             driving_smoke weapon_smoke combat_smoke rival_smoke rival_soak \
-            match_smoke audio_smoke loadout_smoke repair_smoke; do
+            match_smoke audio_smoke loadout_smoke repair_smoke impact_smoke; do
             run_checked_godot "$suite" --fixed-fps 120 --script "res://tests/${suite}.gd"
           done
 

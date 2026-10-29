@@ -1,6 +1,6 @@
 # Driving and physics
 
-> Implementation reference for v0.8. Gameplay feel must be validated in interactive playtests; passing headless tests alone does not establish that driving is fun.
+> Implementation reference for v0.9 on its feature branch. Gameplay feel must be validated in interactive playtests; passing headless tests alone does not establish that driving is fun.
 
 ## Physics baseline
 
@@ -39,7 +39,36 @@ Also adjustable: linear/angular damping and recovery thresholds. Use one consist
 
 Vehicle bodies collide with the world and each other. Momentum, mass, and contact geometry influence motion through the physics engine. Vehicle-versus-vehicle impacts **do not currently deal health damage**. Visible roofs exceed the shallow physical chassis; a separate projectile hurtbox covers the upper body. Tires are visual meshes without rolling collision or wheel-spin animation.
 
-No dedicated impact classification, exaggerated knockback, ramming-damage system, or impact-specific camera feedback is implemented. Avoid documenting these as shipped features.
+v0.9 adds impact classification and presentation without changing these physical defaults. No ramming damage is implemented. Optional extra impulses default off.
+
+## Impact calculation and contact reporting
+
+The shared rigid body sets `contact_monitor = true` and `max_contacts_reported = 16`. Inside `_integrate_forces`, `ImpactDetector` reads `PhysicsDirectBodyState3D` contact position, normal, collider object and both contact-point velocities. For this validated **GodotPhysics3D** backend, these are world-space snapshots captured before the collision solver changes velocities. Angular contact-point velocity is already included by the engine; it must not be added twice. In particular, `get_contact_local_position()` is documented in global coordinates despite its name. Normal is the receiving body's outward separating direction in world space in the validated backend.
+
+Let `v_rel = contact_local_velocity - contact_collider_velocity`, and `n` be the normalized contact normal. Calculate `closing_speed = max(0, -v_rel.dot(n))`. Units are m/s. Reject nonfinite data and invalid normals. This combines opposing velocities, subtracts same-direction velocities and excludes tangential speed. Coalesce a body's manifold contacts to the largest closing speed; do not sum corner contacts or use absolute chassis speed.
+
+| Category | Default normal closing speed |
+| --- | --- |
+| Ignored | Below 1.5 m/s, separating or invalid data |
+| Minor | 1.5 to below 5 m/s |
+| Moderate | 5 to below 12 m/s |
+| Major | 12 m/s or more |
+
+Thresholds are exported on each `ImpactDetector`. Classifier enforces ordered comparisons even if tuning is inconsistent. Ignore `abs(n.y) > 0.65`: ordinary floor/ramp support and landings get no crash event. Suspension rays themselves are not rigid-body contacts. One event is allowed at the start of a contact episode, with 0.35 s without contact required to rearm and a 0.12 s per-reporting-body event interval. The strongest contact in the first eligible step sets severity; a continuing scrape does not later upgrade to major while still touching. Recovery/respawn grants 0.35 s grace. Time uses the physics frame clock, so a temporarily frozen body does not retain an episode indefinitely.
+
+### Optional major-impact exaggeration
+
+Disabled by default. On a fresh major collision, each enabled vehicle applies its own planar central impulse `J = planar_normal * clamp(mass * closing_speed * impulse_scale, 0, linear_cap)`. Defaults: scale **0.04**, cap **700 N·s** (at most **0.5 m/s** added at 1,400 kg). Separately apply only the yaw component of `(contact - body_origin - world_COM_offset).cross(J)`, clamped to **±180 kg·m²/s**. Use the state's `apply_central_impulse` and `apply_torque_impulse` once; no continuous force or pitch/roll torque is added. Existing contact physics still supplies its normal collision response.
+
+The lower instance ID owns vehicle-pair presentation, while each enabled participant independently owns its own response. With matching settings the planar pushes oppose each other; mixed settings are possible for experimentation and are not a balanced competitive configuration. Do not enable this to conceal handling issues. Destroyed/combat-disabled participants receive no added reaction. Defaults for mass, power, steering, braking, grip, damping, suspension, center of mass, AI, weapons and recovery are unchanged.
+
+### Camera/effect limits and tuning
+
+Camera follow settings are preserved. Moderate offsets peak at 0.06 m over 0.18 s; major at 0.18 m over 0.32 s. Vertical offset is 60% of horizontal amplitude; envelopes decay to zero with no RNG or persistent impairment. Exported amplitudes have a hard 0.3 m runtime ceiling. Minor bumps do not shake. Eight scene-local mesh bursts maximum, 8/12/16 line segments for minor/moderate/major, durations 0.26/0.34/0.42 s; no debris rigid bodies or terrain modification.
+
+The 16-contact limit suits two simple boxes and static arena geometry, not a general pileup detector. Ground-like normals and low-speed scrapes are intentionally silent. Retest when changing engine/backend, collider complexity, physics tick rate or contact-reporting limits. Human Windows/controller testing must judge noise, camera comfort, control recovery and optional impulse stability.
+
+API references verified during implementation: [PhysicsDirectBodyState3D](https://docs.godotengine.org/en/stable/classes/class_physicsdirectbodystate3d.html), [RigidBody3D contact reporting](https://docs.godotengine.org/en/stable/classes/class_rigidbody3d.html), and [GodotPhysics3D contact snapshot construction](https://github.com/godotengine/godot/blob/4.7-stable/modules/godot_physics_3d/godot_body_pair_3d.cpp). Local engine confirmed 4.7.2.stable.official.ed1daf0bf; actual rotated-body/head-on/side scenarios validate coordinate/sign assumptions.
 
 ## Recovery and respawn
 

@@ -1,4 +1,4 @@
-[gd_scene load_steps=13 format=3]
+[gd_scene load_steps=14 format=3]
 [ext_resource type="PackedScene" path="res://scenes/test_arena.tscn" id="1"]
 [ext_resource type="Script" path="res://scripts/duel_arena.gd" id="2"]
 [ext_resource type="PackedScene" path="res://scenes/vehicles/player_car.tscn" id="3"]
@@ -11,7 +11,10 @@
 [ext_resource type="Script" path="res://scripts/audio/combat_audio.gd" id="10"]
 [ext_resource type="PackedScene" path="res://scenes/pickups/repair_pickup.tscn" id="11"]
 [ext_resource type="Script" path="res://scripts/debug/repair_feedback.gd" id="12"]
+[ext_resource type="Script" path="res://scripts/effects/impact_feedback.gd" id="13"]
 [node name="Duel" type="Node3D"]
+[node name="ImpactFeedback" type="Node" parent="."]
+script = ExtResource("13")
 [node name="Arena" parent="." instance=ExtResource("1")]
 script = ExtResource("2")
 [node name="Player" parent="." instance=ExtResource("3")]

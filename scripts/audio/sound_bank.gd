@@ -2,6 +2,9 @@ extends RefCounted
 ## Original procedural mono PCM cues. Cached once; no external audio assets.
 const RATE: int = 22050
 const RECIPES = {
+	&"crash_minor": [260.0, -700.0, 0.10, 0.65],
+	&"crash_moderate": [140.0, -220.0, 0.22, 0.78],
+	&"crash_major": [65.0, -55.0, 0.38, 0.85],
 	&"repair": [650.0, 1800.0, 0.22, 0.0],
 	&"heavy_shot": [160.0, -150.0, 0.25, 0.45],
 	&"player_shot": [1100.0, -8500.0, 0.085, 0.12],

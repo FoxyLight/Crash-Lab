@@ -1,8 +1,8 @@
-# Crash Lab v0.8
+# Crash Lab v0.9 — Impact Lab
 
 A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available. Approved driving, camera, player weapon, and rival AI settings are preserved.
 
-v0.8 adds fixed respawning repair pickups for player and rival. Both player weapons, procedural combat audio, and all approved driving, rival, damage, maximum-health, and match settings remain unchanged. Pickup healing is the new combat variable.
+v0.9 adds reusable physical collision telemetry, three crash severities, original crash audio, short spark bursts, and bounded camera reactions in duel and training. Existing repair pickups, weapons, AI, health and scoring remain intact. All approved driving and chase-follow defaults are unchanged; optional extra crash impulses default **off** pending human testing. Physical collisions still cause **no health damage**.
 
 ## Documentation
 
@@ -44,6 +44,26 @@ No external assets, plugins, or downloads are required. The project uses the Com
 | Select blaster / cannon | 1 / 2 | — |
 
 Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are editable in **Project Settings → Input Map**. Opposite pedal input brakes before changing direction. Releasing the pedals allows the car to coast.
+
+## Impact Lab
+
+No new controls. In training (F6 on `scenes/main.tscn`), compare a slow barrier bump, a fast wall crash and a glancing scrape. In duel (F5), try a head-on ram, a side ram and a rear-end collision. Crashes use **relative contact-point speed toward the surface**, so opposing cars combine their closing speeds while tangential speed contributes little. Severity is not a damage value.
+
+| Setting on each car's `ImpactDetector` | Default |
+| --- | --- |
+| Minimum / moderate / major normal closing speed | 1.5 / 5 / 12 m/s |
+| Separation before another event against the same body | 0.35 s |
+| Minimum time between emitted events per reporting car | 0.12 s |
+| Optional extra impulses | Disabled |
+| Enabled impulse scale / linear cap / yaw cap | 0.04 / 700 N·s / 180 kg·m²/s |
+
+Minor bumps get a short clatter and small spark burst. Moderate/major crashes get progressively longer cues and sparks, with camera offsets of **0.06 m for 0.18 s** and **0.18 m for 0.32 s** on the involved player's camera. Camera follow tuning remains unchanged. Offsets decay to zero; minor contacts never shake it. Scene effects are capped at eight bursts, each lasting at most 0.42 s. M/D-pad down mutes crash cues with existing combat audio.
+
+`Debug Output` on `ImpactDetector` prints event actor/collider paths, severity, world contact position/normal, relative velocity and closing speed. One canonical event is emitted per vehicle pair, using the lower instance ID; the reporting signal includes both participants. All manifold contacts are coalesced to the strongest contact for a body. Continuous resting/pushing contact never retriggers until separated. Floor/ramp support contacts with `abs(normal.y) > 0.65` are ignored, including hard landings. Recovery/respawn clears stale state and grants a 0.35 s contact grace period. Destruction and match completion stop crash dispatch; results remove all bursts and clear shake.
+
+Start tuning feedback through the thresholds and camera offsets. Only try `Exaggeration Enabled` after comparing the default: extra impulses are one-shot central planar pushes and separately limited yaw torque, with no upward push or pitch/roll torque. Default caps add at most 0.5 m/s per body at the approved 1,400 kg mass. These effects are provisional; keyboard/controller feel and listening approval are still required. See [PHYSICS](docs/PHYSICS.md) for calculations and engine API references.
+
+![Actual graphical head-on collision, health unchanged](docs/images/impact-major.png)
 
 ## Arena repair pickups
 
@@ -224,20 +244,26 @@ godot --headless --path . --fixed-fps 120 --script res://tests/match_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/audio_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/loadout_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/repair_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/impact_smoke.gd
 ```
 
 On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
 
 Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
 
-For v0.8, all **192 behavior checks** pass: the previous 162 plus 30 repair checks. New checks cover the distinct repair waveform, finite positive/clamped/fractional restoration, accurate return values, no damage/scoring/state side effects, player/rival maxima, full-health overlaps, changing eligibility while parked, atomic callback exclusion, real drive-through collection, exact one-collector distance/tie rules, full-health filtering, non-vehicle/area rejection, partial-repair HUD and centered/world audio, repeated returns, mute, no revival, stopped results/late callbacks, pickups added after completion, clean repeated restart, and continuous training repairs. Existing audio checks also validate the new waveform without changing previous cues. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
+For v0.9, all **229 behavior checks** pass locally: all 192 existing checks plus 37 impact checks. These include actual low-speed, head-on, glancing, perpendicular side, rear-end, sustained-wall and flat-ground scenarios; canonical event/audio dispatch, valid telemetry, opt-in impulse bounds, camera decay, recovery, destruction, respawn, match finish, restart, and training connections. Measured head-on closing speed was 38.53 m/s (major), glancing 3.64 m/s (minor), and rear-end 11.55 m/s (moderate). The original driving acceleration remains approximately 18.46 m/s after three seconds. See [TESTING](docs/TESTING.md) for validation evidence and CI reporting.
 
 The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns, producing a 0–2 score. It verifies score/state consistency in addition to the original movement and stability criteria; the default encounter remains Playing at 60 seconds. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
 
-The user approved human playtests through v0.7. Headless checks validate physics overlaps, mappings, waveforms, and audio dispatch without device playback. A graphical Windows launch of v0.8 rendered available green pads, gray countdown state, actual player health restoration, separate rival world repair feedback, and result cleanup, while exercising the repair playback paths without reported errors. These verify behavior and presentation, not tactical quality. Human driving/controller collection, placement readability, camping balance, and listening checks remain pending.
+The user approved human playtests through v0.8. A graphical Windows v0.9 inspection captured an actual head-on collision with one visible spark burst and full health on both cars. A graphics stress probe reached the eight-burst cap, expired all bursts, and cleared bursts/shake at the result screen; training also loaded without reported runtime errors. These are presentation/lifecycle observations, not human driving or listening approval. Impact feel, audio balance and physical-controller playtests remain pending.
 
 ### Human playtest checklist
 
+- Compare slow bumps, fast head-on, side/rear rams and glancing scrapes; check feedback strength and prompt return of control.
+- Hold against a wall and drive the runway/ramps: no repeated crash noise or shake during ordinary driving.
+- Compare crash sounds with projectile sounds; test mute and assess camera comfort on keyboard and controller.
+- Destroy/respawn, recover with R/D-pad up, finish/restart and repeat in training; check no lingering effects.
+- Leave optional exaggeration off initially; if testing it, watch for spinning, lift or loss of responsiveness.
 - Find and drive over green repair pads using keyboard/controller; check readability at driving speed.
 - Confirm one bounded repair per collection, partial healing near maximum, and no consumption at full health.
 - Let the rival collect incidentally; check its message/cue cannot be mistaken for your own repair.
