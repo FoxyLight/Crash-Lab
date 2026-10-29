@@ -52,6 +52,8 @@ godot --headless --path . --fixed-fps 120 --script res://tests/driving_smoke.gd
 
 Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
 
+The project was also launched in a visible Windows game window. Visual inspection confirmed that the car, arena, chase camera, sky, and readable debug overlay render. Sustained manual driving and a physical controller have not been tested.
+
 ### Human playtest checklist
 
 - Compare low-speed maneuvering and high-speed steering; tune for precise combat movement.
