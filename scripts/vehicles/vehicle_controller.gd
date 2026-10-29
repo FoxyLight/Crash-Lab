@@ -40,7 +40,11 @@ func finish_combat() -> void:
 	combat_active = false
 	driver.stop_commands()
 	$DamageReceiver.finish_combat()
-	$Blaster.stop_firing()
+	var loadout = get_node_or_null("Loadout")
+	if loadout != null:
+		loadout.finish_combat()
+	else:
+		$Blaster.stop_firing()
 	linear_velocity = Vector3.ZERO
 	angular_velocity = Vector3.ZERO
 	freeze = true

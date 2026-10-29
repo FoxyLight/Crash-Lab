@@ -1,0 +1,24 @@
+[gd_scene load_steps=4 format=3]
+[ext_resource type="Script" path="res://scripts/weapons/vehicle_weapon.gd" id="1"]
+[sub_resource type="BoxMesh" id="Barrel"]
+size = Vector3(0.5, 0.35, 1.1)
+[sub_resource type="StandardMaterial3D" id="Metal"]
+albedo_color = Color(0.38, 0.23, 0.5, 1)
+metallic = 0.6
+[node name="HeavyCannon" type="Node3D"]
+position = Vector3(0, 0.3, -1.95)
+script = ExtResource("1")
+weapon_name = "HEAVY CANNON"
+shot_cue = &"heavy_shot"
+projectile_color = Color(0.8, 0.4, 1, 1)
+projectile_visual_size = Vector3(0.3, 0.3, 1.0)
+fire_rate = 0.8
+projectile_speed = 65.0
+projectile_damage = 80.0
+projectile_lifetime = 2.5
+selected = false
+[node name="Barrel" type="MeshInstance3D" parent="."]
+mesh = SubResource("Barrel")
+material_override = SubResource("Metal")
+[node name="Muzzle" type="Marker3D" parent="."]
+position = Vector3(0, 0, -0.65)

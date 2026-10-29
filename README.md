@@ -1,8 +1,8 @@
-# Crash Lab v0.6
+# Crash Lab v0.7
 
 A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available. Approved driving, camera, player weapon, and rival AI settings are preserved.
 
-v0.6 adds procedural combat audio: distinct player/enemy shots, world impacts, accepted damage, destruction, respawn, and victory/defeat/draw cues. It does not change the approved combat balance or match rules.
+v0.7 adds a player-only heavy cannon and keyboard/controller weapon switching alongside the approved blaster. Procedural combat audio and all approved driving, rival, and match settings remain available unchanged.
 
 ## Run
 
@@ -12,6 +12,7 @@ v0.6 adds procedural combat audio: distinct player/enemy shots, world impacts, a
 4. To revisit training, open `scenes/main.tscn` and press **F6**. The original runway, slalom, ramps, target dummy, and northeast turret remain there. The right-side firing range is centered on x = 48; the turret is at (40, 0, -103).
 5. After a result, press **Enter** or **controller Start/Menu** to play again. Release the button before another deliberate restart press. R/D-pad remains vehicle recovery during play and never resets scores or restores health.
 6. Use your normal Windows sound output. Press **M** or **D-pad down** to mute/unmute at any time, including the result screen. Audio status is shown at the bottom right; mute persists across scene restarts until the app closes.
+7. Press **Q / controller Y (north face)** to cycle weapons, or **1 / 2** to select blaster/cannon directly. The left-side loadout HUD shows the selected weapon and readiness. Fire with the existing LMB/F/RB controls. Both weapons have unlimited ammunition.
 
 No external assets, plugins, or downloads are required. The project uses the Compatibility renderer and Godot Physics at 120 physics ticks per second. Earlier Godot 4 versions have not been validated.
 
@@ -25,17 +26,39 @@ No external assets, plugins, or downloads are required. The project uses the Com
 | Hold to fire blaster | Left mouse button or F | Right shoulder (Xbox RB) |
 | Restart finished match | Enter | Start / Menu |
 | Mute / unmute audio | M | D-pad down |
+| Cycle player weapon | Q | North face / Xbox Y |
+| Select blaster / cannon | 1 / 2 | — |
 
 Controller steering and triggers are analog, with a 0.15 deadzone. Bindings are editable in **Project Settings → Input Map**. Opposite pedal input brakes before changing direction. Releasing the pedals allows the car to coast.
 
+## Player loadout
+
+Both duel and training use `player_car.tscn`, which inherits the approved muscle-car chassis and adds a cannon and loadout controller. The rival still inherits the original single-weapon muscle car and has no cannon or player selection controller.
+
+| Weapon | Damage | Cadence | Projectile speed | Lifetime | Feedback |
+| --- | --- | --- | --- | --- | --- |
+| Blaster | 20 HP | 7 shots/s | 110 m/s | 2 s | Original cyan shot and blaster sound |
+| Heavy cannon | 80 HP | 0.8 shots/s | 65 m/s | 2.5 s | Larger violet projectile, violet barrel, lower heavy shot cue |
+
+The cannon is a direct-hit weapon with no splash damage, recoil, charge, homing, or aim assist. Its starting values are provisional and need human balance feedback. The original blaster retains its approved sustained-fire behavior; the cannon offers a stronger opening hit with a 1.25-second cooldown. The rival's original weapon and AI settings are unchanged.
+
+Selection starts on blaster. Only the selected weapon is visible and consumes fire input. Holding fire continues firing the selected weapon when ready. Each slot keeps counting down while holstered, so switching away and back does not refresh its cooldown. A loadout-level guard prevents two player shots in the same physics tick even if selection changes between firing calls. Cycling is release-gated. For simultaneous inputs, direct slot 1 takes precedence over slot 2, and either direct choice takes precedence over cycle.
+
+Dead players and finished matches ignore selection and cannot fire either weapon. Ordinary respawn selects blaster again; existing cooldowns continue rather than receiving a selection-based refill. Manual recovery preserves the selected slot, cooldowns, and health. Match restart rebuilds default blaster selection and clean cooldowns for both slots. Match completion stops both the active and holstered weapon permanently until restart.
+
+Tune cannon damage, fire rate, speed, lifetime, projectile color/size, display name, and shot-cue override on **Player → HeavyCannon** (or **MuscleCar → HeavyCannon** in training). Defaults live in `scenes/weapons/heavy_cannon.tscn`. Empty shot-cue overrides preserve the existing player/enemy sound selection. The projectile collision shape remains a zero-width swept ray; the larger cannon mesh is visual only.
+
+Input mapping stays in the player command provider. `player_loadout.gd` consumes selection requests before weapons run, manages active flags, and coordinates lifecycle hooks. Temporary selection is separate from the permanent match-end firing flag; holstering never stops cooldown updates. The original `Blaster` path remains compatible with existing AI and regression fixtures.
+
 ## Combat audio
 
-The same scene-local audio observer serves both duel and training. Existing weapon, health, and match signals trigger sound; projectiles now report collision positions through their firing weapon. Audio never changes damage, cadence, movement, scoring, or AI, and synthesis uses its own seeded RNG rather than gameplay randomness.
+The same scene-local audio observer serves both duel and training. Existing weapon, health, and match signals trigger sound; projectiles report collision positions through their firing weapon. Audio never changes damage, cadence, movement, scoring, or AI, and synthesis uses its own seeded RNG rather than gameplay randomness.
 
 | Event | Feedback |
 | --- | --- |
 | Player shot | Bright descending blaster sound at the muzzle |
 | Rival/turret shot | Lower pitched blaster sound at the muzzle |
+| Heavy cannon shot | Lower heavy pulse at the muzzle |
 | Projectile collision | Short world impact; missed shots expire silently |
 | Accepted opponent/target damage | World hit sound at the damaged actor |
 | Accepted player damage | Centered damage cue |
@@ -47,7 +70,7 @@ Protected/rejected damage does not trigger a damage cue, and healing does not cr
 
 Select **CombatAudio** in either scene to tune startup **Volume Db** (default -16 dB), **World Voice Limit** (12), and **UI Voice Limit** (3). Restart after changing startup settings. Spatial sounds use distance attenuation with a 100 m cutoff and a close-range gain cap. Impact bursts are limited to one cue per 0.04 seconds. Pools reuse existing players and replace the oldest slot when full; there is no unbounded node allocation during sustained fire.
 
-`sound_bank.gd` generates ten original mono 22,050 Hz, 16-bit PCM cues with short envelopes, controlled sample peaks, and no external assets. Streams are cached once per app session. These are intentionally simple synthesized placeholders. There is no music, engine loop, tire/collision audio, acoustic occlusion, or volume/settings menu in this milestone. Perceived loudness, positioning, fatigue, and cue quality need human listening on speakers/headphones.
+`sound_bank.gd` generates eleven original mono 22,050 Hz, 16-bit PCM cues with short envelopes, controlled sample peaks, and no external assets. Streams are cached once per app session. These are intentionally simple synthesized placeholders. There is no music, engine loop, tire/collision audio, acoustic occlusion, or volume/settings menu. Perceived loudness, positioning, fatigue, and cue quality need human listening on speakers/headphones.
 
 ## Match rules and lifecycle
 
@@ -94,7 +117,10 @@ On completion the controller calls the participants' explicit `finish_combat()` 
 - `tests/match_smoke.gd`, `tests/fixtures/tick_damage.gd`: match/restart checks, including real damage callbacks before and after the controller in one physics tick.
 - `scripts/audio/sound_bank.gd`, `combat_audio.gd`: original procedural cues, scene signal wiring, bounded spatial/centered playback pools, mute, and result/restart lifecycle.
 - `tests/audio_smoke.gd`: waveform, event dispatch, rate limiting, mute, playback, and lifecycle checks.
-- `tests/run_checks.ps1`: editor/startup validation and all seven suites; also rejects Godot runtime errors even when the engine exits with code zero.
+- `scenes/vehicles/player_car.tscn`, `scenes/weapons/heavy_cannon.tscn`: player-specific inherited loadout and configurable cannon; rival inheritance stays unchanged.
+- `scripts/weapons/player_loadout.gd`, `scripts/debug/loadout_hud.gd`: selection, per-tick firing ownership, lifecycle handling, and selected-weapon/cooldown feedback.
+- `tests/loadout_smoke.gd`: mapped switching, firing exclusivity, cooldowns, cannon collisions/audio, and lifecycle checks.
+- `tests/run_checks.ps1`: editor/startup validation and all eight suites; also rejects Godot runtime errors even when the engine exits with code zero.
 
 ## Rival behavior and tuning
 
@@ -155,29 +181,30 @@ godot --headless --path . --fixed-fps 120 --script res://tests/rival_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/rival_soak.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/match_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/audio_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/loadout_smoke.gd
 ```
 
 On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
 
 Editor import and headless launch completed without script or scene errors. The physics suite checks settling on four wheels, forward acceleration, braking, reverse, right steering while upright, handbrake stability, reset with cleared momentum, collision against a solid barrier, traversal of the ramp pair with upright landing, and automatic fall recovery. It uses synthetic Input Map actions; failures return a nonzero exit code. Forward acceleration reached approximately 18.46 m/s after three seconds. These checks verify behavior, not enjoyable driving feel.
 
-For v0.6, all **131 behavior checks** pass: the previous 102 plus 29 audio checks. Audio checks verify non-silent bounded PCM with quiet endpoints, distinct cues, deterministic generation without disturbing gameplay RNG, stream caching, no false initial/blocked/healing feedback, real weapon/impact signals, existing fire cadence, spatial muzzle placement, bounded/rate-limited pools, centered player damage, destruction/respawn, all result variants, post-result suppression, actual M and D-pad mute input events, held-button behavior, mute persistence, observer reconnection, and training audio. The match restart test now counts scoring connections specifically because health also has an audio observer; its duplicate-score protection remains covered. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
+For v0.7, all **162 behavior checks** pass: the previous 131 plus 31 loadout checks. New checks cover default player-only loadout, preserved blaster/rival tuning, mapped Q/1/2/controller Y events, held-cycle suppression, simultaneous-input precedence, selected-only fire, heavy projectile data/audio, independent holstered cooldowns, no switch-based bypass, held-fire transitions and one-shot-per-tick ownership, cannon damage/self-exclusion/thin-obstacle/lifetime behavior, manual recovery, HUD, destruction/respawn, mute, permanent match-end shutdown of both slots, repeated clean restarts, and training compatibility. Existing audio waveform checks also cover the new heavy cue without altering the original cue recipes. The original driving acceleration result remains approximately 18.46 m/s after three seconds.
 
 The additional **60-second default duel simulation** passes: the rival traveled approximately 235 m, stayed upright for all 7,200 physics frames, required zero resets, fired 27 shots, and destroyed a stationary player twice across respawns, producing a 0–2 score. It verifies score/state consistency in addition to the original movement and stability criteria; the default encounter remains Playing at 60 seconds. Results depend on engine/version; the simulation does not rate driving or combat feel. Editor import and default scene startup also pass without reported script/runtime errors.
 
-The user approved human/controller playtests through v0.5. Headless v0.6 checks validate waveform data and event/pool behavior without starting device playback; accelerated dummy-mixer playback is deliberately skipped. The audio suite was also run graphically on Windows, where real spatial playback started and all checks passed without reported errors or cleanup warnings. This verifies engine playback state, not perceived sound quality. Human listening, speaker/headphone mix, and physical controller mute testing remain pending.
+The user approved human playtests through v0.6. Headless checks validate mappings, waveforms, and audio dispatch without device playback. A graphical Windows launch of v0.7 rendered the loadout HUD, visible weapon change, violet cannon projectile, and cooldown countdown and exercised the heavy shot playback path without reported errors. Synthetic input tests verify selection and mute mappings. Physical controller ergonomics, listening quality, and whether both weapons are worthwhile in a duel remain pending human checks.
 
 ### Human playtest checklist
 
-- Listen on speakers/headphones: distinguish player shots, enemy shots, impacts, player damage, and destruction while moving.
-- Check nearby/distant sound positioning and whether sustained firing becomes harsh or masks useful cues.
-- Finish and restart a match; check the correct result phrase, stopped combat tails, and clean playback afterward.
-- Mute/unmute with M and a physical controller's D-pad down, including on the result screen and across replay.
-- Revisit training with F6 and listen to dummy/turret damage and respawns.
-- Confirm the approved handling, combat balance, scoring, and restart behavior remain unchanged.
+- Switch with Q/1/2 and physical controller Y while steering, braking, and holding fire.
+- Distinguish the weapons by barrel, HUD, projectile color/size, and sound.
+- Try rapid switching during cooldown; verify no double shot or cooldown reset exploit.
+- Use both weapons through complete duels and record balance feedback on the cannon; avoid retuning the approved blaster/rival as a workaround.
+- Verify respawn returns to blaster and full match restart resets the loadout cleanly.
+- Revisit training, mute controls, and match results; confirm the approved driving and combat remain comfortable.
 
 ### Known limits
 
 Suspension rays only contact static arena layer 1; tires are visual placeholders without rolling collision or wheel spin. There is no drivetrain/gearing simulation or advanced tire model. The player uses manual rollover recovery; the AI has a delayed recovery reset. The camera checks the desired chase line against the arena with a simple ray rather than a swept camera volume.
 
-Visual feedback remains simple geometry; audio is procedural placeholder synthesis. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks. Dummy/turret respawn restores solid collision in place in training; non-final vehicle respawns wait for spawn clearance. Rival navigation is local rather than a maze planner. Match scores are in-memory only and reset on scene reload. No timer, rounds, menu, pause system, pickups, collision damage, deformation, progression, additional enemies, or new weapons are included. Sound is distance-based without wall occlusion, and voice limits can truncate older sounds. Human audio/playtesting remains necessary.
+Visual feedback remains simple geometry; audio is procedural placeholder synthesis. Projectiles use zero-width sweeps against current physics collider positions, not continuous relative-motion sweeps for fast moving targets. Fire cadence is quantized to physics ticks. Dummy/turret respawn restores solid collision in place in training; non-final vehicle respawns wait for spawn clearance. Rival navigation is local rather than a maze planner. Match scores are in-memory only and reset on scene reload. The player loadout has exactly two unlimited-ammo slots; cannon values are provisional. No splash damage, charge, recoil forces, AI weapon switching, pickups, ammo/reload, menu, progression, or multiplayer is added. Sound lacks wall occlusion, and voice limits can truncate older sounds. Human balance and listening tests remain necessary.
