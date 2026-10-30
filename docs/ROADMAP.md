@@ -16,6 +16,7 @@ Build a small, polished, original Windows vehicular-combat game with responsive 
 - **v0.8.1 implemented on main at `9c0a242`:** public-only Godot headless workflow on one free standard runner with no artifacts/caches. Prior wording that it was still proposed is superseded by the merged starting baseline. Current CI results must still be checked per commit.
 - **v0.9 merged:** [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), commit `cb76c23`, includes reliable impact feedback, visible sparks, refined powertrain and speed FOV. Extra crash impulses remain disabled.
 - **v0.10 on `feature/local-multiplayer`:** two-human shared-world split-screen, explicit device routing, per-player HUDs, strict local damage credit, safe alternate spawns and shared audio/effects. Local implementation/tests and documentation are ready for review; physical controller/two-person acceptance and merge are pending.
+- October 30 playtest: other gameplay looked/felt good; local chase framing was too distant/stretched. Closer horizontal-lens framing is implemented in PR #13, awaiting renewed camera acceptance; no merge authorization received.
 
 ## Approved cost policy for future CI (mandatory)
 

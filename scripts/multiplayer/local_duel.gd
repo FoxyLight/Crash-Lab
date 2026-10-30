@@ -2,6 +2,12 @@ extends Node3D
 ## One physical world, two render views, one input router and one sound observer.
 const Chase = preload("res://scripts/camera/chase_camera.gd")
 const HUD = preload("res://scripts/multiplayer/local_player_hud.gd")
+@export_group("Split-screen chase framing")
+@export_range(3.0, 12.0) var local_camera_distance: float = 6.5
+@export_range(1.0, 6.0) var local_camera_height: float = 2.4
+@export_range(0.0, 1.5) var local_camera_focus_height: float = 0.55
+@export_range(80.0, 115.0) var local_horizontal_fov: float = 110.0
+@export_range(0.0, 10.0) var local_speed_fov_increase: float = 5.0
 var views: Array[SubViewport] = []
 var cameras: Array[Camera3D] = []
 var huds: Array[Control] = []
@@ -47,6 +53,21 @@ func _ready() -> void:
 		var camera := Camera3D.new()
 		camera.set_script(Chase)
 		camera.target = players[index]
+		# Half-height views are very wide. Lock horizontal FOV instead of
+		# expanding the single-player vertical lens to ~141 degrees horizontally.
+		camera.keep_aspect = Camera3D.KEEP_WIDTH
+		camera.distance = local_camera_distance
+		camera.height = local_camera_height
+		camera.focus_height = local_camera_focus_height
+		camera.base_fov = local_horizontal_fov
+		camera.fov = local_horizontal_fov
+		camera.speed_fov_increase = local_speed_fov_increase
+		camera.maximum_fov = minf(120.0, local_horizontal_fov + local_speed_fov_increase)
+		# Own identity/health already lives in this view's HUD. Keep the world
+		# nameplate visible to the opponent without crowding the closer chase view.
+		var nameplate_layer: int = 1 << (18 + index)
+		players[index].get_node("Nameplate").layers = nameplate_layer
+		camera.cull_mask &= ~nameplate_layer
 		camera.far = 350.0
 		view.add_child(camera)
 		camera.current = true

@@ -142,6 +142,8 @@ The difference is within short-run noise, **not proof that a second camera is fr
 
 ### Required human Windows acceptance
 
+**October 30 camera follow-up:** user reported other gameplay looked/felt good but the camera was too far back/stretched. Local framing now uses 6.5 / 2.4 / 0.55 m distance/height/focus, 110–115° **horizontal** FOV (previously ~141–147° horizontal via the vertical lens). The existing multiplayer camera check now verifies that profile and independent speed response. Real Windows captures inspect both full cars at rest, both at ~112 km/h (113.53° horizontal FOV), and resized layout: [before](images/local-camera-before.png), [after](images/local-duel.png), [moving](images/local-camera-speed.png), [resized](images/local-resized.png). Own floating nameplates are excluded from only their own camera; HUD identity remains and opponents still see labels. Earlier collision/respawn/result images and performance measurements above predate this framing change. Human camera recheck and merge remain pending; positive feedback elsewhere is not merge approval.
+
 - [ ] Keyboard/mouse P1 + one physical pad P2: every control, simultaneous driving/fire and no cross-control.
 - [ ] Two separate pads: F2 setup, correct device slots, analog ranges/deadzones and independent handbrake/recovery/switching.
 - [ ] Unplug either pad while moving/firing/holding Y; remaining player keeps control. Reconnect/release to neutral, including reversed connection order and restart while Start is held.

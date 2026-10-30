@@ -74,6 +74,8 @@ Two SubViewportContainers sit in a root VBox and each shares the root `World3D`.
 
 Validated against the local engine and official [viewport guide](https://docs.godotengine.org/en/stable/tutorials/rendering/viewports.html), [per-device Input API](https://docs.godotengine.org/en/stable/classes/class_input.html) and [AudioListener3D](https://docs.godotengine.org/en/stable/classes/class_audiolistener3d.html). In particular, global action strengths do not identify an individual pad; device IDs are routed explicitly.
 
+Post-playtest local framing is configured on the LocalDuel root: 6.5 m back, 2.4 m up, 0.55 m focus, 110° horizontal FOV plus 5° speed widening. The shared chase defaults stay unchanged for AI/training; new optional focus/FOV-cap fields permit local overrides. Local nameplates use visual layers 19/20 (bits 18/19), each camera excluding only its own label while retaining the opponent's. This affects render culling only, not physical collision layers or health data.
+
 ## Known structural limits
 
 No online networking, arbitrary multi-party/assist attribution, environment destruction, collision health damage or paid CI components. Local mode is two players with one horizontal layout and a shared speaker mix. Dynamic extra actors would need observer registration. The public-only workflow includes multiplayer checks; actual hosted results still require verification. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).

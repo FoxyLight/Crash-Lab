@@ -1,6 +1,6 @@
 # Crash Lab v0.10 — Local Multiplayer
 
-**Merged baseline:** v0.9 Impact Lab, `cb76c23`. v0.10 adds a separate two-human local duel on `feature/local-multiplayer`; human Windows/controller acceptance and merge are pending. All approved v0.9 driving, weapon, collision and camera settings are retained.
+**Merged baseline:** v0.9 Impact Lab, `cb76c23`. v0.10 adds a separate two-human local duel on `feature/local-multiplayer`; human acceptance and merge are pending. Approved driving, weapon and collision settings are retained; local camera framing was refined after playtest feedback.
 
 ## Two-player local duel
 
@@ -27,7 +27,9 @@ Local scoring credits only the **opponent who caused the accepted lethal hit**. 
 
 If the primary spawn is occupied after the normal countdown, a local player waits up to **1.5 more seconds** before trying four deterministic alternatives at **(±55, 1.25, ±55)**. P1 checks west/south first, P2 east/north first. Each candidate must pass a chassis clearance query and four ground-support checks; integration rechecks occupancy before moving. No firing/healing occurs until the reset is confirmed. If all candidates are blocked, the player waits safely and retries. With one opposing car and the authored arena, it cannot camp all separated spawns at once. Recovery with R/D-pad up remains a manual return to the primary spawn, without healing or scoring changes.
 
-Horizontal split uses two SubViewports sharing one World3D. Physics, projectiles, pickups and spark lifetimes run once; each view retains v0.9 chase tuning, 75–85° speed FOV and involved-player collision shake. Crossed streak geometry makes one spark burst visible from both viewpoints. One audio observer/listener mixes sounds from the players' midpoint through shared speakers, with session mute and no per-view duplicate cues.
+Horizontal split uses two SubViewports sharing one World3D. Physics, projectiles, pickups and spark lifetimes run once. Each view retains chase smoothing, obstacle avoidance and involved-player collision shake, with the local framing below. Crossed streak geometry makes one spark burst visible from both viewpoints. One audio observer/listener mixes sounds from the players' midpoint through shared speakers, with session mute and no per-view duplicate cues.
+
+**Camera playtest refinement (October 30):** local cameras now sit **6.5 m back / 2.4 m up**, focusing **0.55 m** above the car origin, versus 8.5 / 4.0 / 0.8 previously. Each very wide split view now uses a controlled **110–115° horizontal FOV** rather than retaining 75–85° vertically (which expanded to roughly 141–147° horizontally). This brings the car closer and reduces wide-angle edge distortion. The smaller five-degree speed widening remains smooth. Configure the five local framing exports on the LocalDuel root. Your own floating nameplate is hidden only in your view, where the HUD already supplies identity/health; the opponent still sees it. AI duel/training retain their original camera defaults. [Before](docs/images/local-camera-before.png) / [moving refined view](docs/images/local-camera-speed.png). Final camera feel still needs another human check.
 
 ![Actual local-duel launch layout](docs/images/local-duel.png)
 

@@ -5,6 +5,7 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 ## Unreleased
 
 ### v0.10: Local Multiplayer (feature branch; human acceptance pending)
+- Refine the local chase camera after playtesting: 6.5 m back / 2.4 m up / 0.55 m focus, controlled 110–115° horizontal FOV, and hide the redundant own-camera nameplate. Preserve shared smoothing/shake/obstruction and AI/training camera defaults. Include before/after stationary/moving/resized renders; camera acceptance remains pending.
 - Add `scenes/local_duel.tscn`: one shared arena, equal orange P1/blue P2 human cars, horizontal shared-world SubViewports, independent v0.9 chase cameras and compact HUDs, one winner/draw screen. Keep AI duel as F5 default and training available.
 - Add explicit raw device-aware routing: keyboard/mouse + first pad by default, F2 two-pad setup, analog deadzones, stable hotplug slots, neutral reconnect, independent selection/recovery and release-gated shared restart/mute. Original single-player input is unchanged.
 - Add weak projectile shooter attribution and compatible `take_damage_from`; local scoring credits only the opposing lethal source, with no self/environment/stale-attacker awards. Preserve completed-tick draws and legacy AI one-argument compatibility.

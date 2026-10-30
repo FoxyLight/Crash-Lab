@@ -39,7 +39,7 @@ func _run() -> void:
 	await ticks(120)
 	check(p1.position.distance_to(start1) > 3.0 and p2.position.distance_to(start2) < 0.3, "native keyboard events physically move only Player 1")
 	check(shots[0] > 4 and shots[1] == 0, "keyboard firing reaches only Player 1 weapon")
-	check(scene.cameras[0].fov > scene.cameras[1].fov and scene.cameras[0].speed_fov_increase == 10 and scene.cameras[1].base_fov == 75, "speed FOV reacts independently while preserving both approved camera defaults")
+	check(scene.cameras[0].fov > scene.cameras[1].fov and scene.cameras[0].speed_fov_increase == 5 and scene.cameras[1].base_fov == 110 and scene.cameras[0].keep_aspect == Camera3D.KEEP_WIDTH and scene.cameras[1].distance == 6.5, "local cameras use closer horizontal framing with independent restrained speed FOV")
 	key(KEY_W, false)
 	key(KEY_F, false)
 	var generation1: int = p1.reset_generation
