@@ -45,7 +45,7 @@ func _ready() -> void:
 		view.size = Vector2i(1280, 345)
 		view.world_3d = get_world_3d()
 		view.own_world_3d = false
-		view.audio_listener_enable_3d = false
+		view.audio_listener_enable_3d = index == 0
 		view.gui_disable_input = true
 		view.render_target_update_mode = SubViewport.UPDATE_ALWAYS
 		container.add_child(view)
@@ -83,7 +83,9 @@ func _ready() -> void:
 		layer.add_child(hud)
 		huds.append(hud)
 	listener = AudioListener3D.new()
-	add_child(listener)
+	# Spatial playback discovers listeners through camera-bearing viewports.
+	# The root has no camera: host the shared midpoint listener in just one view.
+	views[0].add_child(listener)
 	listener.make_current()
 	$CombatAudio.status.hide()
 	_build_result()

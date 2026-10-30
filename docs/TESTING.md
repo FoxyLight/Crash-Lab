@@ -142,6 +142,16 @@ The difference is within short-run noise, **not proof that a second camera is fr
 
 ### Required human Windows acceptance
 
+**October 30 audio follow-up:** user heard only the win cue. A graphical `AudioEffectCapture` on the Master bus confirmed zero spatial output with the root listener, while the centered victory cue peaked at 0.076070. Hosting the midpoint listener in the first camera-bearing SubViewport and enabling 3D audio only there restores spatial output without increasing gain. The multiplayer topology assertion now checks that exact listener/view/camera relationship. Existing signal-dispatch and `.playing` checks could not detect this routing failure.
+
+Run the additional real-mixer regression on Windows with an active audio device (not headless, and without accelerated fixed FPS):
+
+```powershell
+godot --path . --script res://tests/audio_output_smoke.gd
+```
+
+All **15 output checks pass** on the existing Godot 4.7.2 / Windows Compatibility renderer. Both real weapon events produce nonzero mixer frames at their authored starts (peak ~0.0151); ten spatial gameplay cues at the listener produce peaks ~0.0293–0.0662; mute produces silent frames; winner output and spatial firing after scene reload pass. The script has a 30-second timeout, returns nonzero on failure, and rejects headless/dummy audio drivers. These are engine mixer measurements, not physical speaker or human loudness/quality acceptance. The 326 headless behavior checks and separate AI soak remain the normal CI suite; this optional graphical check requires a real audio driver.
+
 **October 30 camera follow-up:** user reported other gameplay looked/felt good but the camera was too far back/stretched. Local framing now uses 6.5 / 2.4 / 0.55 m distance/height/focus, 110–115° **horizontal** FOV (previously ~141–147° horizontal via the vertical lens). The existing multiplayer camera check now verifies that profile and independent speed response. Real Windows captures inspect both full cars at rest, both at ~112 km/h (113.53° horizontal FOV), and resized layout: [before](images/local-camera-before.png), [after](images/local-duel.png), [moving](images/local-camera-speed.png), [resized](images/local-resized.png). Own floating nameplates are excluded from only their own camera; HUD identity remains and opponents still see labels. Earlier collision/respawn/result images and performance measurements above predate this framing change. Human camera recheck and merge remain pending; positive feedback elsewhere is not merge approval.
 
 - [ ] Keyboard/mouse P1 + one physical pad P2: every control, simultaneous driving/fire and no cross-control.

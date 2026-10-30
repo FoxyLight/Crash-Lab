@@ -28,7 +28,7 @@ func _run() -> void:
 	check(p1.get_node("DamageReceiver").maximum_health == 100 and p2.get_node("DamageReceiver").maximum_health == 100 and p1.get_node("HeavyCannon").projectile_damage == p2.get_node("HeavyCannon").projectile_damage, "both humans have equal health, protection and player weapon defaults")
 	check(scene.views.size() == 2 and scene.views[0].world_3d == scene.views[1].world_3d and scene.views[0].world_3d == p1.get_world_3d(), "two render views share the single physical World3D")
 	check(scene.cameras[0].target == p1 and scene.cameras[1].target == p2 and scene.cameras[0].get_viewport() != scene.cameras[1].get_viewport(), "each camera follows its own player in its own viewport")
-	check(not scene.views[0].audio_listener_enable_3d and not scene.views[1].audio_listener_enable_3d and scene.listener.is_current(), "one shared listener serves both views without duplicate viewport audio")
+	check(scene.views[0].audio_listener_enable_3d and not scene.views[1].audio_listener_enable_3d and scene.listener.is_current() and scene.listener.get_viewport() == scene.views[0] and scene.views[0].get_camera_3d() == scene.cameras[0], "one shared midpoint listener belongs to an audio-enabled camera viewport without duplicate view audio")
 	router.assign_devices([3])
 	await ticks(3)
 	check(router.devices == [-1, 3], "default keyboard plus first pad supports a nonzero device ID")
