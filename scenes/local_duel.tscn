@@ -1,0 +1,49 @@
+[gd_scene load_steps=10 format=3]
+[ext_resource type="PackedScene" path="res://scenes/test_arena.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/duel_arena.gd" id="2"]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/local_player_car.tscn" id="3"]
+[ext_resource type="Script" path="res://scripts/multiplayer/local_duel.gd" id="4"]
+[ext_resource type="Script" path="res://scripts/multiplayer/local_input_router.gd" id="5"]
+[ext_resource type="Script" path="res://scripts/match/duel_match.gd" id="6"]
+[ext_resource type="PackedScene" path="res://scenes/pickups/repair_pickup.tscn" id="7"]
+[ext_resource type="Script" path="res://scripts/audio/combat_audio.gd" id="8"]
+[ext_resource type="Script" path="res://scripts/effects/impact_feedback.gd" id="9"]
+[node name="LocalDuel" type="Node3D"]
+script = ExtResource("4")
+[node name="InputRouter" type="Node" parent="."]
+script = ExtResource("5")
+[node name="Arena" parent="." instance=ExtResource("1")]
+script = ExtResource("2")
+[node name="Player1" parent="." instance=ExtResource("3")]
+position = Vector3(-22, 1.25, 28)
+[node name="DriverInput" parent="Player1" node_paths=PackedStringArray("router")]
+router = NodePath("../../InputRouter")
+player_index = 0
+[node name="Player2" parent="." instance=ExtResource("3")]
+position = Vector3(22, 1.25, -28)
+rotation_degrees = Vector3(0, 180, 0)
+body_color = Color(0.12, 0.55, 0.9, 1)
+alternate_spawn_points = PackedVector3Array(55, 1.25, -55, 55, 1.25, 55, -55, 1.25, -55, -55, 1.25, 55)
+[node name="DriverInput" parent="Player2" node_paths=PackedStringArray("router")]
+router = NodePath("../../InputRouter")
+player_index = 1
+[node name="MatchController" type="Node" parent="." node_paths=PackedStringArray("player", "rival", "input_router")]
+script = ExtResource("6")
+player = NodePath("../Player1")
+rival = NodePath("../Player2")
+require_damage_source = true
+input_router = NodePath("../InputRouter")
+[node name="RepairPickups" type="Node3D" parent="."]
+[node name="WestRepair" parent="RepairPickups" instance=ExtResource("7")]
+position = Vector3(-45, 0, 10)
+[node name="EastRepair" parent="RepairPickups" instance=ExtResource("7")]
+position = Vector3(35, 0, -35)
+[node name="SouthRepair" parent="RepairPickups" instance=ExtResource("7")]
+position = Vector3(0, 0, 40)
+[node name="ImpactFeedback" type="Node" parent="."]
+script = ExtResource("9")
+dual_view_effects = true
+[node name="CombatAudio" type="Node3D" parent="." node_paths=PackedStringArray("input_router")]
+script = ExtResource("8")
+input_router = NodePath("../InputRouter")
+shared_mix = true

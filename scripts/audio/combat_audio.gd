@@ -5,6 +5,8 @@ const Bank = preload("res://scripts/audio/sound_bank.gd")
 static var session_muted: bool = false
 static var mute_armed: bool = true
 @export var player: RigidBody3D
+@export var input_router: Node
+@export var shared_mix: bool = false
 @export_range(-40.0, 0.0) var volume_db: float = -16.0
 @export_range(1, 24) var world_voice_limit: int = 12
 @export_range(1, 6) var ui_voice_limit: int = 3
@@ -76,6 +78,10 @@ func _exit_tree() -> void:
 		voice.stream = null
 
 func _process(_delta: float) -> void:
+	if input_router != null:
+		if input_router.consume_mute():
+			set_muted(not session_muted)
+		return
 	if not Input.is_action_pressed("mute_audio"):
 		mute_armed = true
 	elif Input.is_action_just_pressed("mute_audio") and mute_armed:
@@ -124,11 +130,11 @@ func play_cue(cue: StringName, location: Vector3 = Vector3.ZERO, spatial: bool =
 func _on_shot(weapon: Node3D) -> void:
 	var cue: StringName = weapon.shot_cue
 	if cue == &"":
-		cue = &"player_shot" if weapon.shooter == player else &"enemy_shot"
+		cue = &"player_shot" if shared_mix or weapon.shooter == player else &"enemy_shot"
 	play_cue(cue, weapon.muzzle.global_position)
 
 func _on_repair_collected(actor: RigidBody3D, _amount: float) -> void:
-	play_cue(&"repair", actor.global_position, actor != player)
+	play_cue(&"repair", actor.global_position, shared_mix or actor != player)
 
 func _on_impact(location: Vector3) -> void:
 	if impact_cooldown <= 0.0:
@@ -142,17 +148,19 @@ func _on_crash(data: Dictionary) -> void:
 func _on_health_changed(health: float, _maximum: float, receiver: Node, actor: Node3D) -> void:
 	var id := receiver.get_instance_id()
 	if health < previous_health.get(id, health):
-		play_cue(&"damage" if actor == player else &"hit", actor.global_position, actor != player)
+		play_cue(&"damage" if shared_mix or actor == player else &"hit", actor.global_position, shared_mix or actor != player)
 	previous_health[id] = health
 
 func _on_destroyed(actor: Node3D) -> void:
 	play_cue(&"destroyed", actor.global_position)
 
 func _on_respawned(actor: Node3D) -> void:
-	play_cue(&"respawn", actor.global_position, actor != player)
+	play_cue(&"respawn", actor.global_position, shared_mix or actor != player)
 
 func _on_match_finished(result: int) -> void:
 	combat_enabled = false
 	stop_voices()
 	var cue: StringName = {1: &"victory", 2: &"defeat", 3: &"draw"}.get(result, &"draw")
+	if shared_mix and result in [1, 2]:
+		cue = &"victory"
 	play_cue(cue, Vector3.ZERO, false, false)

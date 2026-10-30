@@ -11,6 +11,7 @@ var center: MeshInstance3D
 var center_material: StandardMaterial3D
 var velocities: Array[Vector3] = []
 var streak_count: int = 0
+var crossed_streaks: bool = false # One shared mesh readable from either split-screen camera.
 
 func _ready() -> void:
 	add_to_group("combat_effects")
@@ -74,10 +75,12 @@ func _draw_streaks() -> void:
 		if side.length_squared() < 0.1:
 			side = Vector3.RIGHT
 		side *= (0.025 + severity * 0.016) * maxf(0.7, opacity)
-		var points := [tail - side, head - side, head + side, tail - side, head + side, tail + side]
-		for i in points.size():
-			var color := Color("fff5ab") if i in [1, 2, 4] else Color("ff8e25")
-			color.a = opacity
-			streak_mesh.surface_set_color(color)
-			streak_mesh.surface_add_vertex(points[i])
+		for plane in range(2 if crossed_streaks else 1):
+			var width := side if plane == 0 else side.rotated(velocity.normalized(), PI * 0.5)
+			var points := [tail - width, head - width, head + width, tail - width, head + width, tail + width]
+			for i in points.size():
+				var color := Color("fff5ab") if i in [1, 2, 4] else Color("ff8e25")
+				color.a = opacity
+				streak_mesh.surface_set_color(color)
+				streak_mesh.surface_add_vertex(points[i])
 	streak_mesh.surface_end()

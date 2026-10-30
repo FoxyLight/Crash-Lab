@@ -2,6 +2,7 @@ extends Node
 ## Scene-local collision observer. Audio observes the same event independently.
 const Sparks = preload("res://scripts/effects/crash_sparks.gd")
 @export_range(1, 16) var burst_limit: int = 8
+@export var dual_view_effects: bool = false
 @export_range(0.0, 1.5) var spark_surface_height: float = 0.9 # Clear placeholder roof above shallow physics box.
 var enabled: bool = true
 var dispatch_count: int = 0
@@ -33,6 +34,7 @@ func _on_impact(data: Dictionary) -> void:
 	var burst := Sparks.new()
 	burst.severity = data.severity
 	burst.normal = data.normal
+	burst.crossed_streaks = dual_view_effects
 	get_parent().add_child(burst)
 	burst.global_position = spark_origin(data)
 

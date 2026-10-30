@@ -2,6 +2,7 @@ extends Camera3D
 @export var target: Node3D
 @export var distance: float = 8.5
 @export var height: float = 4.0
+@export var focus_height: float = 0.8
 @export var rotation_response: float = 4.0
 @export var smoothing: float = 9.0
 @export_group("Speed perception")
@@ -10,6 +11,7 @@ extends Camera3D
 @export var speed_fov_start: float = 8.0 # m/s
 @export var speed_fov_full: float = 40.0 # m/s
 @export var speed_fov_response: float = 3.0
+@export_range(50.0, 120.0) var maximum_fov: float = 95.0
 var heading := Vector3.BACK
 var initialized: bool = false
 @export_range(0.0, 0.5) var moderate_shake: float = 0.06 # camera offset in meters
@@ -43,7 +45,7 @@ func add_impact(data: Dictionary) -> void:
 func _physics_process(delta: float) -> void:
 	var speed: float = target.linear_velocity.length() if is_instance_valid(target) and target is RigidBody3D else 0.0
 	var speed_blend := smoothstep(speed_fov_start, maxf(speed_fov_start + 0.1, speed_fov_full), speed)
-	var desired_fov := clampf(base_fov + speed_fov_increase * speed_blend, 50.0, 95.0)
+	var desired_fov := clampf(base_fov + speed_fov_increase * speed_blend, 50.0, clampf(maximum_fov, 50.0, 120.0))
 	fov = lerpf(fov, desired_fov, 1.0 - exp(-maxf(0.0, speed_fov_response) * delta))
 	if is_instance_valid(target) and target.get_node("ImpactDetector").grace_remaining > 0.0:
 		clear_impact()
@@ -59,7 +61,7 @@ func _physics_process(delta: float) -> void:
 		# Same planar smoothing, without slerp's unstable axis near parallel headings.
 		var yaw := lerp_angle(atan2(heading.x, heading.z), atan2(back.x, back.z), 1.0 - exp(-rotation_response * delta))
 		heading = Vector3(sin(yaw), 0.0, cos(yaw))
-	var focus := target.global_position + Vector3.UP * 0.8
+	var focus := target.global_position + Vector3.UP * focus_height
 	var desired := focus + heading * distance + Vector3.UP * height
 	var query := PhysicsRayQueryParameters3D.create(focus, desired, 1)
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)

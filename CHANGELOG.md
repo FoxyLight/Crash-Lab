@@ -4,11 +4,21 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 
 ## Unreleased
 
-### v0.9: Impact Lab (feature branch; acceptance pending)
+### v0.10: Local Multiplayer (feature branch; human acceptance pending)
+- Fix silent local gameplay audio: host the shared midpoint listener in the first camera-bearing SubViewport and enable 3D audio only there. Keep cue gains and single-player audio unchanged. Add 15 graphical real-mixer output checks covering both weapons, gameplay cues, mute, winner and reload; retain the 326 headless checks with corrected listener topology coverage.
+- Refine the local chase camera after playtesting: 6.5 m back / 2.4 m up / 0.55 m focus, controlled 110–115° horizontal FOV, and hide the redundant own-camera nameplate. Preserve shared smoothing/shake/obstruction and AI/training camera defaults. Include before/after stationary/moving/resized renders; camera acceptance remains pending.
+- Add `scenes/local_duel.tscn`: one shared arena, equal orange P1/blue P2 human cars, horizontal shared-world SubViewports, independent v0.9 chase cameras and compact HUDs, one winner/draw screen. Keep AI duel as F5 default and training available.
+- Add explicit raw device-aware routing: keyboard/mouse + first pad by default, F2 two-pad setup, analog deadzones, stable hotplug slots, neutral reconnect, independent selection/recovery and release-gated shared restart/mute. Original single-player input is unchanged.
+- Add weak projectile shooter attribution and compatible `take_damage_from`; local scoring credits only the opposing lethal source, with no self/environment/stale-attacker awards. Preserve completed-tick draws and legacy AI one-argument compatibility.
+- Add validated alternate local spawns after a blocked-primary delay, with ground/shape checks and integration-time revalidation before protected respawn. All-occupied cases defer safely.
+- Keep one sound observer/midpoint listener and one spark simulation; use crossed streak geometry for both views. Preserve v0.9 physics, weapon, collision and camera tuning.
+- Add 70 multiplayer checks to local/free CI runners; 326 local behavior checks plus AI soak pass. Include real split/collision/respawn/resize/result images and a short scripted rendering-cost comparison. Two-person physical-controller acceptance and hosted-head result remain tracked in the feature PR.
+
+## v0.9 — Impact Lab (merged at `cb76c23`, PR #12)
 - Refine after human playtesting: fix one-sided reporter loss, allow bounded severity escalation after weak touches, and replace vehicle-wide suppression with independent pair episodes and queued upgrades. Reset/finish cancels both sides' queued events/reactions. Thresholds remain 1.5/5/12 m/s.
 - Replace thin-line sparks with thick animated yellow-white/orange streaks and a bright center, projected above visible bodywork; major duration 0.65 s, eight-burst cap retained.
 - Raise shared power to 22,000 N / 55 m/s cutoff with original steering fade independently fixed at 42 m/s. Preserve mass, brakes, reverse cutoff, grip, damping and suspension. Add configurable smooth 75–85° speed FOV.
-- Measure 22.81 m/s after 3 s (previous 18.46) and 34.05 m/s after a 30 s straight run (previous 26.01); distinguish actual speeds from power cutoff. Add contact-force telemetry, high-speed/one-sided/escalation/geometry/lifecycle and comparative driving checks. All 256 local behavior checks plus rival soak pass; renewed human feel, controller, listening and balance acceptance is pending.
+- Measure 22.81 m/s after 3 s (previous 18.46) and 34.05 m/s after a 30 s straight run (previous 26.01); distinguish actual speeds from cutoff. Add contact-force telemetry and high-speed/reliability/geometry/comparative-driving checks. All 256 baseline behavior checks plus rival soak passed before merge; v0.10 retains these settings.
 - Add reusable GodotPhysics3D contact telemetry and configurable 1.5/5/12 m/s minor/moderate/major normal closing-speed thresholds; ignore support contacts and coalesce sustained collisions and vehicle pairs.
 - Add original severity-specific crash cues, bounded spark bursts and restrained camera offsets. Preserve weapons, health, repair, AI commands and scoring; no collision health damage. Power/FOV refinement is explicitly described above.
 - Add optional one-shot planar/yaw exaggeration, disabled by default, capped at 700 N·s linear and 180 kg·m²/s angular impulse.

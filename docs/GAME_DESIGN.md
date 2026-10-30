@@ -15,13 +15,25 @@ A fast, accessible, physics-driven vehicular-combat game featuring **responsive 
 3. **Destructible arenas:** Physical props and ultimately arena-changing events that create tactical opportunities, not just particles.
 4. **Multiplayer combat:** Readable, fair collisions and weapon feedback. Local split-screen is a design priority; online play is not currently implemented.
 
-## Current playable loop (v0.8)
+## Merged playable baseline (v0.9)
 
 The default duel pits the player against one moving AI rival. Drive and fire, destroy or be destroyed, earn eliminations, respawn between non-final eliminations, and play until the first participant reaches the configured target (default: three). Restart a finished match. Player weapon switching provides a fast blaster and slower heavy cannon. Green repair pads restore up to 25 HP, become unavailable for a 12-second default cooldown, and can also be taken by the rival. The separate training scene contains a stationary turret and target dummy.
 
 Current scenes, tuning, controls, and limitations are described in [README](../README.md).
 
-## v0.9 collision decisions (implemented, human acceptance pending)
+v0.9 Impact Lab is merged at `cb76c23`, including refined acceleration, reliable collision telemetry, visible sparks and speed FOV. Those approved settings form the baseline for local multiplayer.
+
+## v0.10 local multiplayer decisions (implemented; human acceptance pending)
+
+- **One physical match:** two equal human player cars share the existing duel arena, physics, weapons and repair pads. Horizontal split is a presentation layer over one world. AI duel and training remain separate launchable scenes; no online mode or menu expansion.
+- **Controls:** default keyboard/mouse P1 plus first pad P2; F2 selects two pads. Explicit device IDs and independent raw-event state avoid global action cross-talk. A disconnected car coasts with zero commands, and the match continues. Neutral is required before a newly assigned pad joins; remaining players retain their pad slot. No automatic pause/lobby/remapping in this milestone.
+- **Fairness:** both humans use 100 HP, identical blaster/cannon tuning, three-second respawn and 1.5-second protection. Only a lethal hit attributed to the opponent earns a local-match point. Self/unknown kills respawn without points; no stale attacker/assist credit. First to three, with same-tick winning trades resolved as draws.
+- **Spawn camping:** after the normal countdown and 1.5 seconds of blockage, try separated deterministic alternatives with ground/clearance validation. Retry safely if all are blocked; never force a reset into another body. One opponent cannot occupy all four authored alternatives simultaneously.
+- **Readability:** separate compact health/loadout/score/respawn/device HUDs and P1/P2 labels. One global winner/draw overlay, one shared mute/result cue and a midpoint speaker mix. Each involved camera reacts to a crash; one shared burst uses crossed streak geometry. Physics, weapons and collision tuning are unchanged.
+- **Camera playtest response (October 30):** user reported the camera too far back/stretched, with the rest looking/feeling good. Local framing moves to 6.5 m back / 2.4 m up / 0.55 m focus and a 110–115° horizontal lens; remove the excessive ~141–147° sideways expansion of the original split view. Keep the whole car framed and hide only its redundant own-world nameplate. Shared follow smoothing/obstruction/shake and AI/training defaults remain intact. Another human camera check is pending; this feedback is not merge approval.
+- **Evidence and gate:** 70 multiplayer checks plus all 256 existing checks pass locally; real Windows renders cover layout, collision in both views, protected respawn, resize and result. A short scripted rendering probe shows ~5.5 ms average frame time on the inspected GTX 1060, with no measurable single-/two-view difference beyond noise at the same total render area. Physical controllers were not connected, so two-person driving, input/hotplug comfort, aiming readability and final fairness still require human acceptance. Details in [TESTING](TESTING.md#v010-local-multiplayer-validation).
+
+## v0.9 collision decisions (merged)
 
 - **Goal:** make speed and collision angle readable without making steering a chore. Severity uses relative normal contact speed; a fast glancing scrape can be minor while two approaching cars produce a major crash. A perpendicular side ram can still be major. We deliberately do not assign arbitrary multipliers by bumper/side location.
 - **Feedback:** distinct procedural clatter/crunch/thump, severity-scaled short geometric sparks, and bounded decaying camera offsets for moderate/major collisions involving the followed car. No continuous steering penalty, time slowdown, new control, or collision health damage. Weapon damage and match elimination rules remain unchanged.
@@ -35,7 +47,7 @@ Current scenes, tuning, controls, and limitations are described in [README](../R
 
 | Hypothesis | Question to answer through playtests |
 | --- | --- |
-| Impact Lab (implemented; acceptance pending) | Do the current feedback and optional modest exaggeration produce memorable rams without ruining steering? |
+| Impact Lab (merged baseline) | Does the approved feedback remain readable and comfortable with two human cameras? |
 | Destruction Lab | Do breakable objects and an arena hazard meaningfully change player decisions? |
 | Signature weapons | Can a unique special be powerful yet avoidable and legible during high-speed combat? |
 | Local multiplayer | Do combat camera, controller bindings, respawns, and collision reactions remain fair with two humans? |

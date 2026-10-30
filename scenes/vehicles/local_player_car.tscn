@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+[ext_resource type="PackedScene" path="res://scenes/vehicles/player_car.tscn" id="1"]
+[ext_resource type="Script" path="res://scripts/multiplayer/local_vehicle_input.gd" id="2"]
+[node name="LocalPlayer" instance=ExtResource("1")]
+alternate_spawn_points = PackedVector3Array(-55, 1.25, 55, -55, 1.25, -55, 55, 1.25, 55, 55, 1.25, -55)
+[node name="DriverInput" parent="."]
+script = ExtResource("2")
+[node name="LoadoutHUD" parent="."]
+visible = false
+process_mode = 4
+[node name="Nameplate" type="Label3D" parent="."]
+position = Vector3(0, 2.3, 0)
+billboard = 1
+text = "PLAYER"
+font_size = 48
+outline_size = 10
+pixel_size = 0.012

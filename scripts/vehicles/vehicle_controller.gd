@@ -25,6 +25,8 @@ extends RigidBody3D
 @export_group("Recovery")
 @export var reset_height: float = 1.25
 @export var fall_reset_height: float = -12.0
+@export var alternate_spawn_points: PackedVector3Array = PackedVector3Array()
+var respawn_target: Dictionary = {}
 
 @onready var driver = $DriverInput
 var grounded_wheels: int = 0
@@ -42,6 +44,7 @@ var wheel_lengths: Array[float] = [0.65, 0.65, 0.65, 0.65]
 
 func finish_combat() -> void:
 	combat_active = false
+	respawn_target.clear()
 	$ImpactDetector.reset_tracking()
 	driver.stop_commands()
 	$DamageReceiver.finish_combat()
@@ -55,14 +58,44 @@ func finish_combat() -> void:
 	freeze = true
 
 func is_spawn_clear() -> bool:
+	var destination := spawn_transform
+	destination.origin.y = reset_height
+	return is_transform_clear(destination)
+
+func is_transform_clear(destination: Transform3D) -> bool:
 	var query := PhysicsShapeQueryParameters3D.new()
 	query.shape = $CollisionShape3D.shape
-	query.transform = spawn_transform
-	query.transform.origin.y = reset_height
+	query.transform = destination
 	query.margin = 0.3
 	query.collision_mask = 3
 	query.exclude = [get_rid()]
 	return get_world_3d().direct_space_state.intersect_shape(query, 1).is_empty()
+
+func prepare_respawn(allow_alternates: bool) -> bool:
+	var destination := spawn_transform
+	destination.origin.y = reset_height
+	var candidates: Array[Transform3D] = [destination]
+	if allow_alternates:
+		for point in alternate_spawn_points:
+			candidates.append(Transform3D(spawn_transform.basis, point))
+	for i in candidates.size():
+		if not is_transform_clear(candidates[i]):
+			continue
+		if i > 0 and not has_spawn_support(candidates[i]):
+			continue
+		respawn_target = {"transform": candidates[i]}
+		return true
+	respawn_target.clear()
+	return false
+
+func has_spawn_support(destination: Transform3D) -> bool:
+	for mount in wheel_mounts:
+		var start := destination * mount
+		var query := PhysicsRayQueryParameters3D.create(start, start + Vector3.DOWN * 2.0, 1, [get_rid()])
+		var hit := get_world_3d().direct_space_state.intersect_ray(query)
+		if hit.is_empty() or hit.normal.dot(Vector3.UP) < 0.7:
+			return false
+	return true
 
 func _ready() -> void:
 	mass = vehicle_mass
@@ -76,10 +109,13 @@ func _ready() -> void:
 func _integrate_forces(state: PhysicsDirectBodyState3D) -> void:
 	if not combat_active:
 		return
-	if (driver.reset_requested or state.transform.origin.y < fall_reset_height) and is_spawn_clear():
+	var recovery := spawn_transform
+	recovery.origin.y = reset_height
+	if not respawn_target.is_empty():
+		recovery = respawn_target.transform
+	if (driver.reset_requested or state.transform.origin.y < fall_reset_height) and is_transform_clear(recovery):
 		driver.reset_requested = false
-		var recovery := spawn_transform
-		recovery.origin.y = reset_height
+		respawn_target.clear()
 		state.transform = recovery
 		state.linear_velocity = Vector3.ZERO
 		state.angular_velocity = Vector3.ZERO

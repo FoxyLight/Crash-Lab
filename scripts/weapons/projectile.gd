@@ -6,6 +6,7 @@ var velocity: Vector3 = Vector3.ZERO
 var damage: float = 20.0
 var lifetime: float = 2.0
 var shooter_rid: RID
+var damage_source: WeakRef
 var shooter_areas: Array[RID] = []
 var age: float = 0.0
 var color: Color = Color("7bffff")
@@ -35,11 +36,16 @@ func _physics_process(delta: float) -> void:
 	query.hit_from_inside = true
 	var hit := get_world_3d().direct_space_state.intersect_ray(query)
 	if not hit.is_empty():
-		if hit.collider.has_method("take_damage"):
+		var source: Node = damage_source.get_ref() if damage_source != null else null
+		if hit.collider.has_method("take_damage_from"):
+			hit.collider.take_damage_from(damage, source)
+		elif hit.collider.has_method("take_damage"):
 			hit.collider.take_damage(damage)
 		else:
 			var receiver = hit.collider.get_node_or_null("DamageReceiver")
-			if receiver != null and receiver.has_method("take_damage"):
+			if receiver != null and receiver.has_method("take_damage_from"):
+				receiver.take_damage_from(damage, source)
+			elif receiver != null and receiver.has_method("take_damage"):
 				receiver.take_damage(damage)
 		var flash := Flash.new()
 		get_tree().current_scene.add_child(flash)
