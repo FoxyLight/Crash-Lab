@@ -197,9 +197,13 @@ func arena_checks() -> void:
 		check(manager.vehicles().all(func(actor): return actor.is_spawn_clear()), "%s starts with clear vehicle spawns" % name)
 		if name == "local_duel":
 			prop = props_of_kind(1)[0]
+			var cues: Array[StringName] = []
+			scene.get_node("CombatAudio").set_muted(false)
+			scene.get_node("CombatAudio").cue_played.connect(func(cue, _spatial, _location): cues.append(cue))
 			prop.take_damage(1000)
 			await ticks(2)
 			check(scene.views[0].world_3d == prop.get_world_3d() and scene.views[1].world_3d == prop.get_world_3d() and prop.is_destroyed, "both local cameras share exactly the same destroyed world object")
+			check(cues.count(&"barrier_break") == 1, "one real shared-world destruction dispatches one spatial audio cue")
 		if name == "duel":
 			var rival = scene.get_node("Rival")
 			var start: Vector3 = rival.position

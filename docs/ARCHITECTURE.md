@@ -1,6 +1,6 @@
 # Architecture
 
-> Status: merged v0.9 baseline `cb76c23`; v0.10 local multiplayer implemented on its feature branch, awaiting human acceptance/merge. See [README](../README.md).
+> Status: v0.10 merged via [PR #13](https://github.com/FoxyLight/Crash-Lab/pull/13) at `61c6b35`; v0.11 Destruction Lab implemented for review on `feature/destruction-lab`, unmerged. See [README](../README.md).
 
 ## Runtime overview
 
@@ -78,7 +78,19 @@ Post-playtest local framing is configured on the LocalDuel root: 6.5 m back, 2.4
 
 ## Known structural limits
 
-No online networking, arbitrary multi-party/assist attribution, environment destruction, collision health damage or paid CI components. Local mode is two players with one horizontal layout and a shared speaker mix. Dynamic extra actors would need observer registration. The public-only workflow includes multiplayer checks; actual hosted results still require verification. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
+No online networking, arbitrary multi-party/assist attribution, procedural fracture, car-versus-car collision health damage or paid CI components. Local mode is two players with one horizontal layout and a shared speaker mix. Dynamic extra actors/props would need audio observer registration. The public-only workflow includes destruction checks; actual hosted results require verification per commit. See [GAME_DESIGN](GAME_DESIGN.md), [PHYSICS](PHYSICS.md), and [TESTING](TESTING.md).
+
+## v0.11 destruction ownership
+
+`destructible_prop.gd` is a reusable RigidBody3D: 18 kg moving crates, frozen barriers and canisters. It owns durability, darkened damage visuals, one guarded destroyed transition, deferred shape disable/freeze, episode damage records, fuse, and bounded blast delivery. It supports both `take_damage(amount)` and `take_damage_from(amount, source)`; existing swept projectiles need no changes.
+
+`ImpactDetector` adds an `episode_started` timestamp to accepted contact data. After its existing single crash dispatch, it calls `receive_vehicle_impact(data)` only on eligible colliders, outside force integration. The prop credits only the incremental difference from the strongest ram damage in that episode. No additional impact signal observer or competing contact sampler is introduced; original audio/feedback connection counts remain intact.
+
+Each arena builds one `Destruction` manager using reusable scenes in `scenes/props/`. It owns the 64-fragment cap, deterministic breakup fan (private arithmetic, no gameplay RNG), non-solid mesh lifetimes and short blast visuals. Both local views render the same nodes. CombatAudio binds each prop's `sound_requested` once at startup and uses existing voice pools.
+
+On match completion the manager disables damage/fuses and removes effects. No player respawn restores props. Scene restart recreates intact objects and connections. Training has no match gate and broken practice props remain spent until scene reload.
+
+Hazards use a weak reference to the accepted trigger's source. Vehicle health records `death_requires_source` on lethal source-aware calls, including null; match scoring never gives those environmental deaths the legacy AI fallback. Old one-argument `take_damage` calls keep their compatibility behavior. Only health owns vehicle death/protection/respawn; it clears both source fields on confirmed respawn.
 
 ## Documentation maintenance
 

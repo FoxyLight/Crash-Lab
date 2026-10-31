@@ -15,7 +15,7 @@ A fast, accessible, physics-driven vehicular-combat game featuring **responsive 
 3. **Destructible arenas:** Physical props and ultimately arena-changing events that create tactical opportunities, not just particles.
 4. **Multiplayer combat:** Readable, fair collisions and weapon feedback. Local split-screen is a design priority; online play is not currently implemented.
 
-## Merged playable baseline (v0.9)
+## Merged playable baseline (v0.10, `61c6b35` / PR #13)
 
 The default duel pits the player against one moving AI rival. Drive and fire, destroy or be destroyed, earn eliminations, respawn between non-final eliminations, and play until the first participant reaches the configured target (default: three). Restart a finished match. Player weapon switching provides a fast blaster and slower heavy cannon. Green repair pads restore up to 25 HP, become unavailable for a 12-second default cooldown, and can also be taken by the rival. The separate training scene contains a stationary turret and target dummy.
 
@@ -23,15 +23,26 @@ Current scenes, tuning, controls, and limitations are described in [README](../R
 
 v0.9 Impact Lab is merged at `cb76c23`, including refined acceleration, reliable collision telemetry, visible sparks and speed FOV. Those approved settings form the baseline for local multiplayer.
 
-## v0.10 local multiplayer decisions (implemented; human acceptance pending)
+## v0.10 local multiplayer decisions (merged)
 
 - **One physical match:** two equal human player cars share the existing duel arena, physics, weapons and repair pads. Horizontal split is a presentation layer over one world. AI duel and training remain separate launchable scenes; no online mode or menu expansion.
 - **Controls:** default keyboard/mouse P1 plus first pad P2; F2 selects two pads. Explicit device IDs and independent raw-event state avoid global action cross-talk. A disconnected car coasts with zero commands, and the match continues. Neutral is required before a newly assigned pad joins; remaining players retain their pad slot. No automatic pause/lobby/remapping in this milestone.
 - **Fairness:** both humans use 100 HP, identical blaster/cannon tuning, three-second respawn and 1.5-second protection. Only a lethal hit attributed to the opponent earns a local-match point. Self/unknown kills respawn without points; no stale attacker/assist credit. First to three, with same-tick winning trades resolved as draws.
 - **Spawn camping:** after the normal countdown and 1.5 seconds of blockage, try separated deterministic alternatives with ground/clearance validation. Retry safely if all are blocked; never force a reset into another body. One opponent cannot occupy all four authored alternatives simultaneously.
 - **Readability:** separate compact health/loadout/score/respawn/device HUDs and P1/P2 labels. One global winner/draw overlay, one shared mute/result cue and a midpoint speaker mix. Each involved camera reacts to a crash; one shared burst uses crossed streak geometry. Physics, weapons and collision tuning are unchanged.
-- **Camera playtest response (October 30):** user reported the camera too far back/stretched, with the rest looking/feeling good. Local framing moves to 6.5 m back / 2.4 m up / 0.55 m focus and a 110–115° horizontal lens; remove the excessive ~141–147° sideways expansion of the original split view. Keep the whole car framed and hide only its redundant own-world nameplate. Shared follow smoothing/obstruction/shake and AI/training defaults remain intact. Another human camera check is pending; this feedback is not merge approval.
-- **Evidence and gate:** 70 multiplayer checks plus all 256 existing checks pass locally; real Windows renders cover layout, collision in both views, protected respawn, resize and result. A short scripted rendering probe shows ~5.5 ms average frame time on the inspected GTX 1060, with no measurable single-/two-view difference beyond noise at the same total render area. Physical controllers were not connected, so two-person driving, input/hotplug comfort, aiming readability and final fairness still require human acceptance. Details in [TESTING](TESTING.md#v010-local-multiplayer-validation).
+- **Camera playtest response (October 30):** user reported the camera too far back/stretched, with the rest looking/feeling good. Local framing moves to 6.5 m back / 2.4 m up / 0.55 m focus and a 110–115° horizontal lens; remove the excessive ~141–147° sideways expansion of the original split view. Keep the whole car framed and hide only its redundant own-world nameplate. Shared follow smoothing/obstruction/shake and AI/training defaults remain intact. This framing and the later spatial-audio correction were included in the completed v0.10 merge (PR #13, 61c6b35).
+- **Evidence and gate:** 70 multiplayer checks plus all 256 existing checks pass locally; real Windows renders cover layout, collision in both views, protected respawn, resize and result. A short scripted rendering probe shows ~5.5 ms average frame time on the inspected GTX 1060, with no measurable single-/two-view difference beyond noise at the same total render area. Physical controllers were not connected during those automated fixtures. v0.10 is merged; those measurements do not verify every physical-device/hotplug scenario. Details in [TESTING](TESTING.md#v010-local-multiplayer-validation).
+
+## v0.11 destruction decisions (implemented; human acceptance pending)
+
+- **Readable alternatives:** mirrored sparse props in both duels; two barriers open real routes when broken, while original structural cover/boundaries remain. A separate west-side training lane avoids existing handling/range practice.
+- **Weight:** light 18 kg crates yield physically to the approved 1,400 kg chassis. Frozen stronger cover stops vehicles until destroyed. Normal contact speed and collision episodes decide ram damage, not absolute speed, scraping or repeated pushing.
+- **Existing weapon roles:** 40/140 durability gives crates two blaster hits or one cannon hit, and barriers seven blaster hits or two cannon hits. Existing 20/80 vehicle damage and cadence stay unchanged.
+- **Tactical hazard:** one central red/yellow canister, visible 0.8 s fuse and 12 m warning ring, maximum 45 HP with linear falloff and cover shielding. Spawn protection works; no impulse, chain reaction or instant healthy-car kill. Mirrored starts and repair pads are outside its radius.
+- **Fair eliminations:** the projectile that depletes the canister supplies blast source; unknown/ram triggers are environmental. Opponent lethal damage earns credit, self/unknown deaths do not. No stale attacker credit survives respawn, including the AI mode.
+- **Predictable cost:** eight non-solid shards per break, 64 shared globally and 2.5 s lifetime; one effect simulation/audio event serves both views. No persistent physical debris, procedural fracture or vehicle damage model.
+- **Lifecycle:** props stay spent through player respawns; finished-match restart rebuilds them. Finish clears effects and cancels fuses. Training props reset on scene reload.
+- **Human gate:** automated rams, source/lifecycle checks and real renders establish behavior. They do not establish satisfying smash feel, fair placement, warning timing or sound balance; those remain v0.11 playtest questions.
 
 ## v0.9 collision decisions (merged)
 

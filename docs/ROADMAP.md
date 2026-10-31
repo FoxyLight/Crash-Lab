@@ -1,12 +1,12 @@
 # Crash Lab development roadmap
 
-> **Status:** Proposed milestone sequence as of October 29, 2026. The **zero-paid-CI constraint is approved**. Milestone scope, priorities, dates, and designs can change following playtests. A milestone is complete only when implemented, validated, documented, and merged. See [GAME_DESIGN](GAME_DESIGN.md).
+> **Status:** Updated October 31, 2026. v0.10 is merged; v0.11 Destruction Lab is the current next-milestone implementation, awaiting review and human acceptance. The **zero-paid-CI constraint is approved**. Later scope and designs can change following playtests. A milestone is complete only when implemented, validated, documented, and merged.
 
 ## North star
 
 Build a small, polished, original Windows vehicular-combat game with responsive arcade handling, convincing physical weight, memorable crashes, different tactical weapons, reactive arenas, and enjoyable two-human-player matches. Preserve the already-approved driving baseline as new systems are introduced.
 
-## Current merged baseline: v0.9 (`cb76c23`)
+## Current merged baseline: v0.10 (`61c6b35`)
 
 - Godot 4 / GDScript, one drivable muscle car with four-ray suspension and a chase camera.
 - Separate training arena and default duel against a moving AI rival.
@@ -15,8 +15,8 @@ Build a small, polished, original Windows vehicular-combat game with responsive 
 - Tracked architectural, design, physics, and testing documentation.
 - **v0.8.1 implemented on main at `9c0a242`:** public-only Godot headless workflow on one free standard runner with no artifacts/caches. Prior wording that it was still proposed is superseded by the merged starting baseline. Current CI results must still be checked per commit.
 - **v0.9 merged:** [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), commit `cb76c23`, includes reliable impact feedback, visible sparks, refined powertrain and speed FOV. Extra crash impulses remain disabled.
-- **v0.10 on `feature/local-multiplayer`:** two-human shared-world split-screen, explicit device routing, per-player HUDs, strict local damage credit, safe alternate spawns and shared audio/effects. Local implementation/tests and documentation are ready for review; physical controller/two-person acceptance and merge are pending.
-- October 30 playtest: other gameplay looked/felt good; local chase framing was too distant/stretched. Closer horizontal-lens framing is implemented in PR #13, awaiting renewed camera acceptance; no merge authorization received.
+- **v0.10 merged:** [PR #13](https://github.com/FoxyLight/Crash-Lab/pull/13), `61c6b35`, includes shared-world split-screen, device routing, strict credit, alternate spawns, refined chase framing and corrected spatial audio. Final feature-head [CI run 41121372903](https://github.com/FoxyLight/Crash-Lab/actions/runs/41121372903) passed. Historical fixtures do not independently prove unrecorded physical-device scenarios.
+- **Next milestone v0.11:** Destruction Lab on `feature/destruction-lab`; crates, breakable cover, bounded shared debris and one fair single-use hazard. Leave the PR unmerged for Windows playtesting; preserve v0.10 handling, camera and weapons.
 
 ## Approved cost policy for future CI (mandatory)
 
@@ -38,8 +38,8 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | --- | --- | --- | --- |
 | v0.8.1 | **Free development foundation** | One narrowly scoped, public-only CI workflow using a free standard runner; run existing headless Godot suites without artifacts/caches. | All existing suites run on an allowed runner; deliberate failure makes the check fail; no premium runner/storage action; local runner still works. |
 | v0.9 | **Impact Lab** | Merged at `cb76c23`, including playtest refinements. | Baseline for v0.10; no collision health damage. |
-| v0.10 | **Multiplayer Lab** | Implemented on feature branch: device-aware controls, shared-world horizontal split, equal human loadouts, strict attribution and alternate spawns. | 326 local checks + soak; require CI and two-person Windows/controller playtests before merge. |
-| v0.11 | **Destruction Lab** | Breakable props, controlled debris, one meaningful arena hazard, performance bounds. | Driving/shots produce readable destruction; physics and frame pacing stay stable. |
+| v0.10 | **Multiplayer Lab** | Merged at `61c6b35`, PR #13. | 326 checks + soak; final feature-head CI passed. Preserve historical/manual evidence distinctions. |
+| v0.11 | **Destruction Lab** | Current implementation: crates, breakable cover, 64 non-solid fragments, one telegraphed hazard and fair source credit. | Regressions, screenshots and measured bounds; Windows human acceptance before merge. |
 | v0.12 | **Vehicle identity** | Heavy pickup versus muscle car; distinct handling/ramming trade-offs; one signature ability per vehicle. | Human playtests establish meaningful, reasonably balanced choices. |
 | v0.13 | **Playable vertical slice** | Menu, vehicle/match selection, HUD/audio polish, packaging, repeatable local and AI matches. | A new player can launch, play a full match, view results, and replay without developer assistance. |
 
@@ -63,7 +63,8 @@ Official reference: [GitHub Actions billing](https://docs.github.com/en/billing/
 | Free-only CI policy | Approved and documented | This file and [TESTING](TESTING.md) |
 | v0.8.1 headless CI implementation | Implemented on merged main | Commit `9c0a242`; [workflow](../.github/workflows/godot-headless.yml) |
 | v0.9 Impact Lab | Merged | [PR #12](https://github.com/FoxyLight/Crash-Lab/pull/12), `cb76c23`, [validation](TESTING.md#v09-playtest-refinement-validation) |
-| v0.10 Local Multiplayer | Implemented on feature branch; human acceptance/merge pending | [PR #13](https://github.com/FoxyLight/Crash-Lab/pull/13), 326 local checks + soak, [passing CI](https://github.com/FoxyLight/Crash-Lab/actions/runs/40936246949), [validation/performance](TESTING.md#v010-local-multiplayer-validation) and screenshots |
-| v0.11 and later milestones | Proposed / not implemented | Requires separate feature PRs and validation |
+| v0.10 Local Multiplayer | Merged at `61c6b35` | [PR #13](https://github.com/FoxyLight/Crash-Lab/pull/13), 326 checks + soak, [final feature-head CI](https://github.com/FoxyLight/Crash-Lab/actions/runs/41121372903), historical [validation](TESTING.md#v010-local-multiplayer-validation) |
+| v0.11 Destruction Lab | Implemented on feature branch; unmerged | [Current validation](TESTING.md#v011-destruction-lab-validation), human acceptance required |
+| v0.12 and later milestones | Proposed / not implemented | Separate scope, feature PRs and validation required |
 
 When a milestone is merged, update status and evidence here in the same PR; distinguish planned, in progress, tested, and merged.

@@ -1,6 +1,6 @@
 # Driving and physics
 
-> Merged v0.9 baseline `cb76c23`, retained for v0.10 local multiplayer. Gameplay feel must be validated in interactive playtests; passing headless tests alone does not establish that driving is fun.
+> Current merged baseline: v0.10, `61c6b35` / PR #13, retaining approved v0.9 handling and impact tuning. v0.11 adds prop interactions without retuning the chassis or either camera profile. Passing headless tests alone does not establish driving feel.
 
 ## Physics baseline
 
@@ -40,7 +40,7 @@ Also adjustable: linear/angular damping and recovery thresholds. Use one consist
 
 Vehicle bodies collide with the world and each other. Momentum, mass, and contact geometry influence motion through the physics engine. Vehicle-versus-vehicle impacts **do not currently deal health damage**. Visible roofs exceed the shallow physical chassis; a separate projectile hurtbox covers the upper body. Tires are visual meshes without rolling collision or wheel-spin animation.
 
-v0.9 adds impact classification/presentation and the explicitly requested powertrain refinement. Mass, brakes, reverse cutoff, grip, damping, suspension, center of mass and original steering-by-speed curve are preserved. No ramming damage is implemented. Optional extra impulses default off. High-speed physical tests did not reproduce tunneling at 55 m/s into another chassis or a 0.15 m wall, so collider dimensions, contact limits and CCD settings were retained. The visual roof remains outside the shallow physical chassis; that geometric limitation is not a telemetry failure.
+v0.9 adds impact classification/presentation and the explicitly requested powertrain refinement. Mass, brakes, reverse cutoff, grip, damping, suspension, center of mass and original steering-by-speed curve are preserved. v0.11 adds ramming damage to eligible props only; vehicle collisions still do not damage health. Optional extra impulses default off. High-speed physical tests did not reproduce tunneling at 55 m/s into another chassis or a 0.15 m wall, so collider dimensions, contact limits and CCD settings were retained. The visual roof remains outside the shallow physical chassis; that geometric limitation is not a telemetry failure.
 
 ## Impact calculation and contact reporting
 
@@ -93,13 +93,21 @@ Two SubViewports share one root World3D/physics space at **120 Hz**, not two sim
 
 The initial half-height view preserved 75° vertical FOV, giving approximately 141° horizontal at 1280×345 (`2*atan(tan(vertical/2)*aspect)`); widening to 85° vertically gave ~147° across. This explains the stretched edges and small, distant-looking car. Local cameras now use `Camera3D.KEEP_WIDTH` with **110° horizontal**, widening by **5°** at speed. Distance **6.5 m**, height **2.4 m**, focus height **0.55 m** frame the entire car with a closer/lower view. `local_duel.gd` exports all five values. Smoothing 9/s, yaw response 4/s, speed thresholds/response, obstruction ray and collision shake are unchanged.
 
-The shared chase script exposes `focus_height` (default **0.8 m**) and `maximum_fov` (default **95°**); AI/training still use their original 8.5 m / 4 m and 75–85° vertical lens. Only the local scene sets its horizontal cap to 115°. HUD/world geometry is not stretched to achieve this. See [Godot Camera3D aspect/FOV](https://docs.godotengine.org/en/stable/classes/class_camera3d.html). Stationary, moving and resized views were rendered and inspected; human framing approval remains pending.
+The shared chase script exposes `focus_height` (default **0.8 m**) and `maximum_fov` (default **95°**); AI/training still use their original 8.5 m / 4 m and 75–85° vertical lens. Only the local scene sets its horizontal cap to 115°. HUD/world geometry is not stretched to achieve this. See [Godot Camera3D aspect/FOV](https://docs.godotengine.org/en/stable/classes/class_camera3d.html). Stationary, moving and resized views were rendered and inspected; these are the preserved camera profiles from merged v0.10; unrecorded hardware scenarios remain unverified.
 
 Local `alternate_spawn_points` are four flat-arena corners at (±55, 1.25, ±55), searched in authored order; they retain the primary spawn's heading. Health waits **1.5 seconds after an occupied normal respawn countdown** before alternatives become eligible. At each physics step, try the primary first, then alternatives: physical chassis overlap query, mask 3, own RID excluded, 0.3 m margin; alternatives also require all four wheel-mount downward rays (2 m, world mask 1) to hit support with normal-up dot ≥0.7. The recorded candidate is rechecked inside integration immediately before moving. Health waits for a new `reset_generation` before restoration/protection/input. Re-evaluate blocked candidates rather than reserving a location that could become occupied. If every candidate is unsafe, defer and retry. This replaces spawn camping deadlock in the authored two-car local arena without unsafe teleporting.
 
 The manual reset API and v0.9 input/physics contract stay compatible. Alternate points are empty by default on the shared chassis; only the local player scene configures them. Projectiles gain weak shooter attribution through an optional source-aware damage method, without adding a physical collision force or health-damage path.
 
-Local sparks use two crossed quads per streak so the one simulated effect remains visible from both cameras. Colors, velocities, counts, durations, center and eight-burst cap are unchanged. Local major maximum: **1,728 streak vertices** across eight bursts plus their centers; single-player remains 864. No new effect instances or particle simulations are created per viewport. Split-screen sound has one root listener at the participants' midpoint; listeners in both render views are disabled.
+Local sparks use two crossed quads per streak so the one simulated effect remains visible from both cameras. Colors, velocities, counts, durations, center and eight-burst cap are unchanged. Local major maximum: **1,728 streak vertices** across eight bursts plus their centers; single-player remains 864. No new effect instances or particle simulations are created per viewport. Split-screen sound uses one midpoint listener hosted in the first camera-bearing view, with 3D audio enabled only there. The camera-less root route was corrected before v0.10 merged.
+
+## Destructible contact rules (v0.11)
+
+Use the existing pre-solver relative normal closing speed. Below 6 m/s, ram damage is zero. At/above that gate, damage is `6 × max(0, speed − 4)`: approximately 48 at 12 m/s, 96 at 20 m/s and 186 at 35 m/s. Props track the strongest delivered amount per vehicle/episode; accepted severity upgrades apply only the difference. Damage follows accepted Impact Lab events, so increasing speed within an already delivered category does not create continuous damage. The existing 0.35 s separation rule rearms a distinct impact. Tangential scraping and held contact do not accumulate damage every step.
+
+Crates are 18 kg CCD bodies, with pitch/roll locked, so the 1,400 kg car pushes through instead of striking an immovable block. Barriers/canisters are frozen rigid bodies until destroyed; a substantial ram can destroy cover while normal collision response still slows the car. Destruction clears collision layers/masks and defers shape disabling/freezing safely. No velocity restoration, artificial chassis force, collider or handling change is used.
+
+Fragments are animated meshes under one manager, not rigid bodies or areas: maximum eight per break / 64 active, 2.5 s lifetime, deterministic gravity/floor bounce and shrink. They cannot enter suspension, projectile or spawn queries. The canister blast is damage only, with linear distance falloff, static-world line-of-sight shielding and no impulse or chain reactions.
 
 ## Tuning and regression procedure
 

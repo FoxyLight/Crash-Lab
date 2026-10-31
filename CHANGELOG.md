@@ -4,15 +4,26 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 
 ## Unreleased
 
-### v0.10: Local Multiplayer (feature branch; human acceptance pending)
+### v0.11: Destruction Lab (implemented on feature branch; human acceptance pending)
+- Add reusable 40-durability physical crates, 140-durability frozen barriers and a single 30-durability energy canister to AI/local duels and a separate training practice lane.
+- Reuse ImpactDetector's normal closing-speed contact snapshots and episode identity for bounded ram damage; no chassis, camera, weapon or vehicle-collision health tuning changes.
+- Add one 0.8-second telegraphed, 12 m / maximum 45 HP falloff blast, cover shielding, protection/finish gates and explicit projectile-source credit. Source-aware unknown environmental deaths receive no legacy AI fallback points; one-argument legacy APIs remain compatible.
+- Add shared non-solid ballistic debris: eight pieces per break, 64 global, 2.5-second lifetime, finish/restart cleanup. Add three procedural destruction cues through the existing shared spatial route.
+- Add deterministic physical destruction tests, graphical/audio output checks, screenshots and before/after Windows measurements. Add the suite to existing public-only free CI without changing runner, guard, permissions, timeout or artifact/cache policy.
+- Local validation passes 394 behavior checks (326 existing + 68 destruction), AI soak and 18 graphical real-mixer checks; bounded debris stress reaches 64, with warmed ~5.4 ms mean rendered frames on the inspected PC. Human v0.11 feel/balance acceptance remains pending.
+- Audit all seven project documents: v0.10 is merged at `61c6b35`; retain historical evidence and distinguish unverified device/manual scenarios.
+
+## v0.10 — Local Multiplayer (merged at `61c6b35`, PR #13)
+
+Final successful feature-head CI: [run 41121372903](https://github.com/FoxyLight/Crash-Lab/actions/runs/41121372903), `9522111`. Historical implementation evidence below is retained; v0.10 implementation and merge are complete. Physical-device checks not recorded as observed remain unverified.
 - Fix silent local gameplay audio: host the shared midpoint listener in the first camera-bearing SubViewport and enable 3D audio only there. Keep cue gains and single-player audio unchanged. Add 15 graphical real-mixer output checks covering both weapons, gameplay cues, mute, winner and reload; retain the 326 headless checks with corrected listener topology coverage.
-- Refine the local chase camera after playtesting: 6.5 m back / 2.4 m up / 0.55 m focus, controlled 110–115° horizontal FOV, and hide the redundant own-camera nameplate. Preserve shared smoothing/shake/obstruction and AI/training camera defaults. Include before/after stationary/moving/resized renders; camera acceptance remains pending.
+- Refine the local chase camera after playtesting: 6.5 m back / 2.4 m up / 0.55 m focus, controlled 110–115° horizontal FOV, and hide the redundant own-camera nameplate. Preserve shared smoothing/shake/obstruction and AI/training camera defaults. Include before/after stationary/moving/resized renders.
 - Add `scenes/local_duel.tscn`: one shared arena, equal orange P1/blue P2 human cars, horizontal shared-world SubViewports, independent v0.9 chase cameras and compact HUDs, one winner/draw screen. Keep AI duel as F5 default and training available.
 - Add explicit raw device-aware routing: keyboard/mouse + first pad by default, F2 two-pad setup, analog deadzones, stable hotplug slots, neutral reconnect, independent selection/recovery and release-gated shared restart/mute. Original single-player input is unchanged.
 - Add weak projectile shooter attribution and compatible `take_damage_from`; local scoring credits only the opposing lethal source, with no self/environment/stale-attacker awards. Preserve completed-tick draws and legacy AI one-argument compatibility.
 - Add validated alternate local spawns after a blocked-primary delay, with ground/shape checks and integration-time revalidation before protected respawn. All-occupied cases defer safely.
 - Keep one sound observer/midpoint listener and one spark simulation; use crossed streak geometry for both views. Preserve v0.9 physics, weapon, collision and camera tuning.
-- Add 70 multiplayer checks to local/free CI runners; 326 local behavior checks plus AI soak pass. Include real split/collision/respawn/resize/result images and a short scripted rendering-cost comparison. Two-person physical-controller acceptance and hosted-head result remain tracked in the feature PR.
+- Add 70 multiplayer checks to local/free CI runners; 326 behavior checks plus AI soak pass locally and on final feature-head CI. Include real split/collision/respawn/resize/result images and a short scripted rendering-cost comparison. Retain the manual-device checklist as a record of unverified hardware scenarios.
 
 ## v0.9 — Impact Lab (merged at `cb76c23`, PR #12)
 - Refine after human playtesting: fix one-sided reporter loss, allow bounded severity escalation after weak touches, and replace vehicle-wide suppression with independent pair episodes and queued upgrades. Reset/finish cancels both sides' queued events/reactions. Thresholds remain 1.5/5/12 m/s.
