@@ -30,6 +30,28 @@ func _ready() -> void:
 	_label("COMBAT ZONE", Vector3(40, 0.04, -75))
 	_block("CombatCover", Vector3(4, 3, 2), Vector3(30, 1.5, -95), Color("617c85"))
 	_block("CombatCover", Vector3(4, 3, 2), Vector3(51, 1.5, -82), Color("617c85"))
+	_destruction_practice()
+
+func _destruction_practice() -> void:
+	var manager := _destruction_manager()
+	_prop(manager, "breakable_crate", Vector3(-51, 0.9, -4))
+	_prop(manager, "breakable_crate", Vector3(-57, 0.9, -4))
+	_prop(manager, "destructible_barrier", Vector3(-52, 1.2, -23))
+	_prop(manager, "energy_canister", Vector3(-52, 1.1, -44))
+	_label("DESTRUCTION / RAM OR SHOOT", Vector3(-50, 0.04, 5))
+
+func _destruction_manager() -> Node3D:
+	var manager := Node3D.new()
+	manager.set_script(preload("res://scripts/destruction/destruction_manager.gd"))
+	manager.name = "Destruction"
+	add_child(manager)
+	return manager
+
+func _prop(manager: Node3D, type: String, location: Vector3) -> Node3D:
+	var prop = load("res://scenes/props/%s.tscn" % type).instantiate()
+	prop.position = location
+	manager.add_child(prop)
+	return prop
 
 func _block(title: String, size: Vector3, location: Vector3, color: Color, solid: bool = true, tilt: Vector3 = Vector3.ZERO) -> void:
 	var body := StaticBody3D.new() if solid else Node3D.new()

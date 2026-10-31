@@ -22,7 +22,8 @@ func _run() -> void:
 	ai = rival.get_node("DriverInput")
 	health = rival.get_node("DamageReceiver")
 	rival.get_node("Blaster").shot_fired.connect(func(): shots += 1)
-	check(main.find_children("*", "RigidBody3D", true, false).size() == 2 and main.get_node_or_null("EnemyTurret") == null, "duel contains two vehicles and no turret")
+	var chassis: Array = main.find_children("*", "RigidBody3D", true, false).filter(func(body): return body.has_node("DriverInput"))
+	check(chassis.size() == 2 and chassis.has(car) and chassis.has(rival) and main.get_node_or_null("EnemyTurret") == null, "duel contains two vehicles and no turret")
 	ai.target = null
 	var start: Vector3 = rival.position
 	var start_basis: Basis = rival.global_basis

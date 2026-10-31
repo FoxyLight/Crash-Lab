@@ -22,7 +22,9 @@ func _run() -> void:
 	Router.saved_devices = [-1, -1]
 	await fresh()
 	check(ProjectSettings.get_setting("application/run/main_scene") == "res://scenes/duel.tscn", "AI duel remains the configured launch mode")
-	check(scene.find_children("*", "RigidBody3D", true, false).size() == 2 and scene.get_node_or_null("Rival") == null, "local arena has exactly two human chassis and no AI rival")
+	# Destructible props are also rigid bodies; count chassis by their provider contract.
+	var chassis: Array = scene.find_children("*", "RigidBody3D", true, false).filter(func(body): return body.has_node("DriverInput"))
+	check(chassis.size() == 2 and chassis.has(p1) and chassis.has(p2) and scene.get_node_or_null("Rival") == null, "local arena has exactly two human chassis and no AI rival")
 	check(p1.get_node("DriverInput").router == router and p2.get_node("DriverInput").router == router, "both providers explicitly reference the scene-local router")
 	check(p1.mass == 1400 and p2.mass == 1400 and p1.engine_force == 22000 and p2.maximum_speed == 55 and p1.steering_speed_reference == 42, "shared approved v0.9 chassis tuning is preserved")
 	check(p1.get_node("DamageReceiver").maximum_health == 100 and p2.get_node("DamageReceiver").maximum_health == 100 and p1.get_node("HeavyCannon").projectile_damage == p2.get_node("HeavyCannon").projectile_damage, "both humans have equal health, protection and player weapon defaults")

@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/destruction/destructible_prop.gd" id="1"]
+[node name="EnergyCanister" type="RigidBody3D"]
+script = ExtResource("1")
+kind = 2
+maximum_durability = 30.0
+dimensions = Vector3(1.4, 2.2, 1.4)
+body_color = Color(0.8, 0.14, 0.08, 1)

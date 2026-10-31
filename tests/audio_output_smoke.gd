@@ -29,7 +29,7 @@ func _run() -> void:
 		await create_timer(0.6).timeout
 		check_output("%s weapon event" % actor.name)
 	# Cover every spatial gameplay waveform through the production voice pool.
-	for cue in [&"crash_minor", &"crash_moderate", &"crash_major", &"repair", &"heavy_shot", &"impact", &"hit", &"damage", &"destroyed", &"respawn"]:
+	for cue in [&"crash_minor", &"crash_moderate", &"crash_major", &"repair", &"heavy_shot", &"impact", &"hit", &"damage", &"destroyed", &"respawn", &"wood_break", &"barrier_break", &"hazard_blast"]:
 		await silence()
 		audio.play_cue(cue, scene.listener.global_position)
 		await create_timer(0.6).timeout

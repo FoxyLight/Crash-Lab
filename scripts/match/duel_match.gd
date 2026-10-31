@@ -32,7 +32,7 @@ func _on_destroyed(index: int) -> void:
 	var victim = player if index == 0 else rival
 	var opponent = rival if index == 0 else player
 	var source: Node = victim.get_node("DamageReceiver").get_death_source()
-	if (require_damage_source or source != null) and source != opponent:
+	if (require_damage_source or source != null or victim.get_node("DamageReceiver").death_requires_source) and source != opponent:
 		return
 	var tick := Engine.get_physics_frames()
 	var points: Vector2i = pending_eliminations.get(tick, Vector2i.ZERO)
