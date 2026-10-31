@@ -9,3 +9,10 @@ func _ready() -> void:
 	_block("Cover", Vector3(6, 3, 4), Vector3(18, 1.5, 15), Color("617c85"))
 	_block("Cover", Vector3(5, 3, 5), Vector3(-38, 1.5, -32), Color("617c85"))
 	_label("CRASH LAB / DUEL", Vector3(0, 0.04, 45))
+	var manager := _destruction_manager()
+	# Mirrored placements keep both human starts equally clear.
+	for side in [-1.0, 1.0]:
+		_prop(manager, "breakable_crate", Vector3(side * 42, 0.9, side * 18))
+		_prop(manager, "breakable_crate", Vector3(side * 60, 0.9, side * 25))
+		_prop(manager, "destructible_barrier", Vector3(0, 1.2, side * 20))
+	_prop(manager, "energy_canister", Vector3(0, 1.1, 0))

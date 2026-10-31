@@ -36,6 +36,8 @@ func _ready() -> void:
 		add_child(voice)
 		ui_voices.append(voice)
 	for node in get_parent().find_children("*", "", true, false):
+		if node.has_signal("sound_requested"):
+			node.sound_requested.connect(play_cue)
 		if node.has_signal("impact_detected"):
 			node.impact_detected.connect(_on_crash)
 		if node.has_signal("collected") and node.has_method("try_collect"):

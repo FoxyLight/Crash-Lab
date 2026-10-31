@@ -1,6 +1,24 @@
-# Crash Lab v0.10 — Local Multiplayer
+# Crash Lab v0.11 — Destruction Lab
 
-**Merged baseline:** v0.9 Impact Lab, `cb76c23`. v0.10 adds a separate two-human local duel on `feature/local-multiplayer`; human acceptance and merge are pending. Approved driving, weapon and collision settings are retained; local camera framing was refined after playtest feedback.
+**Merged baseline:** v0.10 Local Multiplayer, [PR #13](https://github.com/FoxyLight/Crash-Lab/pull/13), merge commit `61c6b35`. Its final [CI run](https://github.com/FoxyLight/Crash-Lab/actions/runs/41121372903) passed on `9522111`. v0.11 is implemented on `feature/destruction-lab` for human review; it is not merged. Approved vehicle, camera and weapon settings are retained. Historical v0.10 fixtures below record what was automated; the merge does not independently establish every physical-controller/hotplug test.
+
+## Destruction Lab
+
+No new controls: ram or fire at labeled props. Both duel modes share four crates, two breakable barriers at (0, ±20), one central energy canister, and the existing indestructible boundaries/cover. Layout is mirrored about the arena center and clear of primary/alternate spawns and repair pads. Training adds a labeled practice lane around x = −52, z = −4 to −44; the original runway, courses, ramps and range remain.
+
+| Object | Durability | Behavior |
+| --- | ---: | --- |
+| Brown banded crate | 40 | Lightweight 18 kg body yields to the car; two blaster hits or one cannon hit break it. |
+| Blue-gray striped barrier | 140 | Solid cover until broken; seven blaster hits or two cannon hits open the route. |
+| Red/yellow energy canister | 30 | Two blaster hits, one cannon hit or a hard ram start a visible 0.8 s fuse and orange 12 m warning ring. |
+
+Weapons retain 20/80 damage and existing cadence. Ram damage starts at 6 m/s **normal closing speed**, then uses `6 × max(0, closing_speed − 4)`; one contact episode credits only its strongest delivered damage, not continuous pushing. Impact Lab still owns physical contact sampling and crash feedback. There is no car-versus-car collision health damage or added chassis impulse.
+
+The canister detonates once for at most **45 HP**, falling linearly to zero at 12 m. Intact world cover blocks blast damage. Spawn protection and finished matches reject it. Only the accepted projectile that depleted its durability supplies blast credit; ramming or unknown triggers are environmental. Opponent lethal damage earns a point, self/unknown lethal damage earns none, including the AI duel. Vehicle health still owns protection, death and clearing source state on respawn. No chain reactions or explosion impulse.
+
+Breaking removes collision, darkens/hides intact geometry and produces up to eight non-solid ballistic shards. One manager limits the shared world to **64 fragments**, each lasting **2.5 s**; fragments cannot obstruct suspension, bullets or respawns. One simulation and one spatial audio event serve both views. Wood, barrier and blast cues use the existing bounded audio pools/mute route. Props stay broken across player respawns. Finished-match restart rebuilds the arena; finish cancels pending blasts and clears debris.
+
+Validation: **395 behavior checks** (326 existing + 69 destruction), separate 60 s AI soak and **18 real-mixer checks** pass locally. See [validation, screenshots and performance](docs/TESTING.md#v011-destruction-lab-validation). Human Windows/controller checks remain necessary for crate-smashing feel, cover tactics, warning readability, sound balance and sustained split-screen frame pacing.
 
 ## Two-player local duel
 
@@ -29,11 +47,11 @@ If the primary spawn is occupied after the normal countdown, a local player wait
 
 Horizontal split uses two SubViewports sharing one World3D. Physics, projectiles, pickups and spark lifetimes run once. Each view retains chase smoothing, obstacle avoidance and involved-player collision shake, with the local framing below. Crossed streak geometry makes one spark burst visible from both viewpoints. One audio observer/listener mixes sounds from the players' midpoint through shared speakers, with session mute and no per-view duplicate cues. The shared listener belongs to the first camera-bearing viewport, with 3D audio enabled only there; a camera-less root listener previously silenced gameplay cues while leaving the centered win cue audible.
 
-**Camera playtest refinement (October 30):** local cameras now sit **6.5 m back / 2.4 m up**, focusing **0.55 m** above the car origin, versus 8.5 / 4.0 / 0.8 previously. Each very wide split view now uses a controlled **110–115° horizontal FOV** rather than retaining 75–85° vertically (which expanded to roughly 141–147° horizontally). This brings the car closer and reduces wide-angle edge distortion. The smaller five-degree speed widening remains smooth. Configure the five local framing exports on the LocalDuel root. Your own floating nameplate is hidden only in your view, where the HUD already supplies identity/health; the opponent still sees it. AI duel/training retain their original camera defaults. [Before](docs/images/local-camera-before.png) / [moving refined view](docs/images/local-camera-speed.png). Final camera feel still needs another human check.
+**Camera playtest refinement (October 30):** local cameras now sit **6.5 m back / 2.4 m up**, focusing **0.55 m** above the car origin, versus 8.5 / 4.0 / 0.8 previously. Each very wide split view now uses a controlled **110–115° horizontal FOV** rather than retaining 75–85° vertically (which expanded to roughly 141–147° horizontally). This brings the car closer and reduces wide-angle edge distortion. The smaller five-degree speed widening remains smooth. Configure the five local framing exports on the LocalDuel root. Your own floating nameplate is hidden only in your view, where the HUD already supplies identity/health; the opponent still sees it. AI duel/training retain their original camera defaults. [Before](docs/images/local-camera-before.png) / [moving refined view](docs/images/local-camera-speed.png). This is the merged v0.10 camera profile, preserved for v0.11; assess it again with destruction during the new playtest.
 
 ![Actual local-duel launch layout](docs/images/local-duel.png)
 
-**Validation:** all **326 behavior checks** (256 existing + 70 multiplayer) and the separate 60-second AI soak pass locally on Godot 4.7.2. Real Windows renders cover split layout, a shared 55 m/s head-on crash, protected respawn, resize and a controlled winner screen. [Testing and performance evidence](docs/TESTING.md#v010-local-multiplayer-validation) records measurements and CI reporting. Physical two-person controller playtesting is still required; no connected controllers were detected during automated inspection.
+**Validation:** all **326 behavior checks** (256 existing + 70 multiplayer) and the separate 60-second AI soak pass locally on Godot 4.7.2. Real Windows renders cover split layout, a shared 55 m/s head-on crash, protected respawn, resize and a controlled winner screen. [Testing and performance evidence](docs/TESTING.md#v010-local-multiplayer-validation) records measurements and CI reporting. No connected controllers were detected during that historical automated inspection; v0.10 has since merged, while unrecorded device-specific scenarios remain unverified.
 
 **Limits and manual checks:** horizontal layout only; existing canvas/aspect scaling makes distant targets smaller at half height. No automatic pause, lobby, separate headphone mixes, assist scoring or networking. Local bindings are currently fixed in the raw router; Input Map rebinding still applies to the original single-player/training provider. If both pads disconnect, reconnection order fills the vacant slots anew. Test keyboard+pad and two pads, hotplug while holding controls, simultaneous driving/switching, full matches, spawn camping, high-speed aiming/camera comfort, audio/mute and resize. A brief render probe averaged ~5.5 ms/frame in one- and two-view scripted combat; this is not a performance guarantee. See [TESTING](docs/TESTING.md) for the setup and acceptance checklist.
 
@@ -41,7 +59,7 @@ The earlier single-player and Impact Lab reference follows; its historical resul
 
 A small Godot 4 arcade vehicle combat playground for Windows PC. The default mode is a **first-to-three-eliminations match** against one blue moving rival, ending in victory, defeat, or a draw with an immediate replay option. Both vehicles share the rigid-body driving system, exchange projectile fire, collide physically, and respawn between non-final eliminations. The original continuous training playground remains available.
 
-v0.9 adds physical collision telemetry, crash feedback and playtest refinements: more reliable event handling, thick moving sparks, stronger acceleration and modest speed-based FOV. Power is now **22,000 N**, with a **55 m/s power cutoff**. Mass, brakes, reverse cutoff, grip, suspension, damping, steering angles and their original 42 m/s fade reference remain intact, as do weapons, AI commands, health, scoring and repairs. Optional extra crash impulses default **off**. Physical collisions still cause **no health damage**. These are the merged v0.9 settings; local multiplayer feel/balance remains subject to human acceptance.
+v0.9 adds physical collision telemetry, crash feedback and playtest refinements: more reliable event handling, thick moving sparks, stronger acceleration and modest speed-based FOV. Power is now **22,000 N**, with a **55 m/s power cutoff**. Mass, brakes, reverse cutoff, grip, suspension, damping, steering angles and their original 42 m/s fade reference remain intact, as do weapons, AI commands, health, scoring and repairs. Optional extra crash impulses default **off**. Physical collisions still cause **no health damage**. These approved settings are retained in merged v0.10 and this v0.11 feature branch.
 
 ## Documentation
 
@@ -182,7 +200,7 @@ Protected/rejected damage does not trigger a damage cue, and healing does not cr
 
 Select **CombatAudio** in either scene to tune startup **Volume Db** (default -16 dB), **World Voice Limit** (12), and **UI Voice Limit** (3). Restart after changing startup settings. Spatial sounds use distance attenuation with a 100 m cutoff and a close-range gain cap. Impact bursts are limited to one cue per 0.04 seconds. Pools reuse existing players and replace the oldest slot when full; there is no unbounded node allocation during sustained fire.
 
-`sound_bank.gd` generates twelve original mono 22,050 Hz, 16-bit PCM cues with short envelopes, controlled sample peaks, and no external assets. Streams are cached once per app session. These are intentionally simple synthesized placeholders. There is no music, engine loop, tire/collision audio, acoustic occlusion, or volume/settings menu. Perceived loudness, positioning, fatigue, and cue quality need human listening on speakers/headphones.
+`sound_bank.gd` generates eighteen original mono 22,050 Hz, 16-bit PCM cues with short envelopes, controlled sample peaks, and no external assets. Streams are cached once per app session. These are intentionally simple synthesized placeholders. There is no music, engine loop, continuous tire audio, acoustic audio occlusion, or volume/settings menu. Crash/destruction sounds are discrete cues. Perceived loudness, positioning, fatigue, and cue quality need human listening on speakers/headphones.
 
 ## Match rules and lifecycle
 
@@ -236,7 +254,9 @@ On completion the controller calls the participants' explicit `finish_combat()` 
 - `scenes/pickups/repair_pickup.tscn`, `scripts/pickups/repair_pickup.gd`: reusable non-solid repair pad, overlap arbitration, countdown, and match-end guard.
 - `scripts/debug/repair_feedback.gd`: actual-amount player/rival messages, independent of existing weapon/score HUD.
 - `tests/repair_smoke.gd`: restoration API, real physics overlaps, simultaneous collectors, repeated collection/respawn, audio, match shutdown, reload, and training checks.
-- `tests/run_checks.ps1`: editor/startup validation and all nine suites; also rejects Godot runtime errors even when the engine exits with code zero.
+- `scripts/destruction/`, `scenes/props/`: reusable durability, physical contact integration, single-use hazard and shared non-solid fragment budget.
+- `tests/destruction_smoke.gd`: physical rams, swept shots, cover, blast scoring/protection, stress and match lifecycle.
+- `tests/run_checks.ps1`: editor/startup validation and all twelve suites; also rejects Godot runtime errors even when the engine exits with code zero.
 
 ## Rival behavior and tuning
 
@@ -270,7 +290,7 @@ Tune player health, respawn delay, and protection on **MuscleCar → DamageRecei
 
 Select **Player → Blaster** in the duel (or **MuscleCar → Blaster** in training) to tune fire rate (7 shots/s), projectile speed (110 m/s), damage (20 HP), and lifetime (2 seconds). Ammo is unlimited. The weapon reads `fire_requested` from the input provider and has no recoil or influence on chassis physics. Established player driving and weapon settings are preserved.
 
-Player shots follow the front barrel's forward direction in world space, including chassis pitch on ramps. There is no screen-center aim correction, player turret, homing, inherited chassis velocity, or gravity. Every physics tick sweeps a ray from the previous position to the next, using collision layers 1 (arena/targets/turret), 2 (vehicles), and 3 (damage areas). The firing body and its areas are excluded, and rays detect starting inside other solid obstacles. The first hit stops the shot. Damage calls `take_damage(amount)` on the collider/area or its `DamageReceiver` child, allowing health to remain separate from vehicle physics. Shots disappear on impact or expiry. Cyan player and orange enemy tracers are visual; collision uses a zero-width ray.
+Player shots follow the front barrel's forward direction in world space, including chassis pitch on ramps. There is no screen-center aim correction, player turret, homing, inherited chassis velocity, or gravity. Every physics tick sweeps a ray from the previous position to the next, using collision layers 1 (arena/targets/turret), 2 (vehicles), and 3 (damage areas). The firing body and its areas are excluded, and rays detect starting inside other solid obstacles. The first hit stops the shot. Damage prefers `take_damage_from(amount, source)` and falls back to `take_damage(amount)` on the collider/area or its `DamageReceiver` child, allowing health to remain separate from vehicle physics. Shots disappear on impact or expiry. Cyan player and orange enemy tracers are visual; collision uses a zero-width ray.
 
 Open `scenes/targets/target_dummy.tscn` to tune maximum health (100 HP) and respawn delay (3 seconds). Health and respawn countdown appear above the target. Hits briefly flash white; destruction leaves a dark flattened placeholder and temporarily disables its collider. Respawn restores health, appearance, and collision. Physical car collisions do not invoke damage. Health, destruction, and respawn signals support future HUD or combatants without coupling them to the weapon.
 
@@ -300,6 +320,8 @@ godot --headless --path . --fixed-fps 120 --script res://tests/audio_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/loadout_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/repair_smoke.gd
 godot --headless --path . --fixed-fps 120 --script res://tests/impact_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/multiplayer_smoke.gd
+godot --headless --path . --fixed-fps 120 --script res://tests/destruction_smoke.gd
 ```
 
 On Windows, run everything with `./tests/run_checks.ps1 -Godot 'FULL_PATH_TO_YOUR_GODOT_EXECUTABLE'`. The runner fails on nonzero exit codes and reported script/runtime errors. The new suites have explicit simulated-time watchdogs and bounded physics loops.
@@ -310,7 +332,7 @@ For the refined v0.9, all **256 behavior checks** pass locally, including **19 d
 
 The **60-second default duel simulation** passes: the rival travels **149.65 m**, stays upright **7,200/7,200** frames, needs **zero resets**, fires **13 shots** and destroys the stationary player once, score **0–1**. The original-power observation was 235.26 m, 27 shots and two deaths; higher power changes the encounter trajectory even though AI commands and its 14 m/s desired speed are unchanged. Tests require stable movement, firing, destruction and consistent scoring, not an exact chase route. Balance/fairness still needs human testing.
 
-v0.9 is now the merged baseline at cb76c23. A graphical Windows v0.9 inspection captured an actual head-on collision with one visible spark burst and full health on both cars. A graphics stress probe reached the eight-burst cap, expired all bursts, and cleared bursts/shake at the result screen; training also loaded without reported runtime errors. These are presentation/lifecycle observations, not human driving or listening approval. For v0.10, renewed two-person feel, audio balance and physical-controller checks remain pending.
+The following v0.9 observations are historical; the current merged baseline is v0.10 at 61c6b35. A graphical Windows v0.9 inspection captured an actual head-on collision with one visible spark burst and full health on both cars. A graphics stress probe reached the eight-burst cap, expired all bursts, and cleared bursts/shake at the result screen; training also loaded without reported runtime errors. These are presentation/lifecycle observations, not human driving or listening approval. v0.10 subsequently merged via PR #13; unrecorded physical-device checks are not implied by these captures. Renewed destruction acceptance belongs to v0.11.
 
 ### Human playtest checklist
 

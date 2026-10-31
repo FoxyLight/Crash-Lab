@@ -18,6 +18,7 @@ var pending_reset_generation: int = -1
 var combat_active: bool = true
 var spawn_blocked_time: float = 0.0
 var death_source: WeakRef
+var death_requires_source: bool = false
 @onready var vehicle: RigidBody3D = get_parent()
 @onready var driver = vehicle.get_node("DriverInput")
 var meshes: Array[MeshInstance3D] = []
@@ -43,9 +44,12 @@ func _collect_meshes() -> void:
 		meshes.append(node)
 
 func take_damage(amount: float) -> void:
-	take_damage_from(amount, null)
+	_apply_damage(amount, null, false)
 
 func take_damage_from(amount: float, source: Node) -> void:
+	_apply_damage(amount, source, true)
+
+func _apply_damage(amount: float, source: Node, explicit_source: bool) -> void:
 	if not combat_active or is_destroyed or protection_remaining > 0.0 or not is_finite(amount) or amount <= 0.0:
 		return
 	health = maxf(0.0, health - amount)
@@ -56,6 +60,7 @@ func take_damage_from(amount: float, source: Node) -> void:
 		# Only this accepted lethal hit decides credit. Never reuse an old attacker
 		# after an unattributed/environmental final hit, repair, or another life.
 		death_source = weakref(source) if is_instance_valid(source) else null
+		death_requires_source = explicit_source
 		is_destroyed = true
 		respawn_remaining = respawn_delay
 		pending_reset_generation = -1
@@ -98,6 +103,7 @@ func _physics_process(delta: float) -> void:
 				protection_remaining = spawn_protection
 				spawn_blocked_time = 0.0
 				death_source = null
+				death_requires_source = false
 				driver.controls_enabled = true
 				health_changed.emit(health, maximum_health)
 				respawned.emit()

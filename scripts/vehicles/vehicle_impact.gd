@@ -127,8 +127,9 @@ func observe_contact(data: Dictionary) -> void:
 	clock = float(Engine.get_physics_frames()) / Engine.physics_ticks_per_second
 	var id: int = data.collider.get_instance_id()
 	if not contacts.has(id) or clock - contacts[id].last_seen > separation_delay:
-		contacts[id] = {"last_seen": clock, "peak": 0, "emitted_at": -INF}
+		contacts[id] = {"last_seen": clock, "peak": 0, "emitted_at": -INF, "started": clock}
 	var episode: Dictionary = contacts[id]
+	data.episode_started = episode.started
 	episode.last_seen = clock
 	data.severity = classify(data.closing_speed)
 	if data.severity <= episode.peak:
@@ -189,3 +190,5 @@ func _physics_process(_delta: float) -> void:
 		if debug_output:
 			print("CRASH ", {"actor": str(vehicle.get_path()), "other": str(data.collider.get_path()), "m_s": data.closing_speed, "severity": data.severity, "position": data.position, "normal": data.normal, "relative": data.relative_velocity})
 		impact_detected.emit(data)
+		if data.collider.has_method("receive_vehicle_impact"):
+			data.collider.receive_vehicle_impact(data)

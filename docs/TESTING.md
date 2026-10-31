@@ -1,12 +1,12 @@
 # Testing and validation
 
-> Report tests actually executed, not presumed. Current merged baseline: **v0.9**, `cb76c23`. Current feature: **v0.10 Local Multiplayer**, awaiting physical-controller/two-person acceptance and merge. Older sections below retain historical evidence; they do not replace current head checks.
+> Report tests actually executed, not presumed. Current merged baseline: **v0.10**, `61c6b35` / [PR #13](https://github.com/FoxyLight/Crash-Lab/pull/13). Final feature-head [run 41121372903](https://github.com/FoxyLight/Crash-Lab/actions/runs/41121372903) on `9522111` is verified successful. Current feature: **v0.11 Destruction Lab**, unmerged for review/human acceptance. Historical checklists below are retained as evidence, not current v0.10 merge blockers. Unchecked physical-device/hotplug cases remain unverified by automated fixtures.
 
 ## Environment
 
 - Target: Windows PC, Godot 4.x / GDScript; the [README](../README.md) reports validation with **Godot 4.7.2.stable**.
 - Project root contains `project.godot`.
-- Local Godot directory supplied for development: `E:\Backup\Downloads\Godot`. Find the actual executable inside; **never commit an absolute machine-specific path**.
+- Use the existing installed Godot executable; **never commit an absolute machine-specific path**.
 - Godot uses 120 physics ticks/sec for this project.
 
 ## Run the full Windows validation
@@ -18,7 +18,7 @@ From the repository root in PowerShell:
 .\tests\run_checks.ps1 -Godot "FULL_PATH_TO_GODOT_EXE"
 ```
 
-The runner performs headless editor import and startup checks, then runs all eleven test scripts at a fixed 120 FPS. It rejects nonzero process exit codes and reported `SCRIPT ERROR` / `ERROR` lines.
+The runner performs headless editor import and startup checks, then runs all twelve suites (including the separate soak script) at fixed 120 FPS. It rejects nonzero process exit codes and reported `SCRIPT ERROR` / `ERROR` lines.
 
 ## Automated suites
 
@@ -35,6 +35,7 @@ The runner performs headless editor import and startup checks, then runs all ele
 | `tests/repair_smoke.gd` | Repair amounts, overlapping collectors, respawn, feedback/audio, match end |
 | `tests/impact_smoke.gd` | Actual head-on/glancing/side/rear/wall/ground physics, event coalescing, severity/finite data, optional impulse bounds, camera/audio dispatch, lifecycle |
 | `tests/multiplayer_smoke.gd` | Independent raw input/device slots, two shared-world views/HUDs, simultaneous driving/fire, damage credit, safe alternate spawns, repeated local matches |
+| `tests/destruction_smoke.gd` | Real ram/sweep/cover physics, shared props, debris caps, hazard distance/protection/source credit, finish and repeated restarts |
 
 The v0.8 README **reports** 192 passing behavior checks and separate duel-soak results. These figures are historical documentation, not evidence that the latest PR has been executed.
 
@@ -54,7 +55,7 @@ The v0.8 README **reports** 192 passing behavior checks and separate duel-soak r
 The repository includes [`.github/workflows/godot-headless.yml`](../.github/workflows/godot-headless.yml). When enabled on the **public** repository, it runs on push to `main` and pull requests targeting `main`, using a single standard `ubuntu-24.04` runner.
 
 - Installs the official **Godot 4.7.2-stable Linux x86_64** release from `godotengine/godot-builds`. Verifies its published SHA-256 digest before executing the binary; checks the engine version.
-- Runs headless import, default startup and the same eleven suites as the Windows runner, including Impact Lab and multiplayer. Rejects nonzero exits, timeouts and lines beginning `SCRIPT ERROR:` or `ERROR:`.
+- Runs headless import, default startup and the same twelve suites as the Windows runner, including Impact Lab, multiplayer and destruction. Rejects nonzero exits, timeouts and lines beginning `SCRIPT ERROR:` or `ERROR:`.
 - Runs with read-only repository permissions, a 30-minute job timeout, five-minute per-command timeouts, and cancellation of redundant runs.
 - **Cost boundaries:** job-level `github.event.repository.private == false` guard; free standard runner only; **no** uploaded test/build artifacts, package publishing, or workflow caches. Job logs and check status are retained automatically by GitHub under repository settings.
 - The workflow does not install export templates, make distributable builds, use paid third-party services, or modify repository billing settings.
@@ -91,7 +92,7 @@ Historical initial Windows validation on October 29, 2026, before the refinement
 - [ ] Repeat destroy/respawn, R/D-pad recovery, finish/restart and repair/weapon use near collisions.
 - [ ] Compare optional exaggeration only after the default; watch for spin, flipping, launching or unfair recovery.
 
-At this historical test point v0.9 acceptance was pending; v0.9 has since merged at `cb76c23`. v0.10 two-person/controller acceptance remains pending. Automated upright/cleanup checks and screenshots do not establish fun, comfort or audio quality.
+At this historical test point v0.9 acceptance was pending; v0.9 has since merged at `cb76c23`. v0.10 has since merged at 61c6b35; unrecorded physical-device cases remain unverified. Automated upright/cleanup checks and screenshots do not establish fun, comfort or audio quality.
 
 ## v0.9 playtest refinement validation
 
@@ -109,6 +110,8 @@ The user reported unreliable collision feedback, hard-to-see sparks and sluggish
 This v0.9 section is historical; use the v0.10 checklist below for current acceptance. Controller driving/audio quality cannot be established by automated fixtures.
 
 ## v0.10 local multiplayer validation
+
+Historical implementation evidence; subsequently merged at `61c6b35`. The final feature-head CI link is recorded at the top of this document; retain earlier runs for comparison.
 
 Windows, existing **Godot 4.7.2.stable.official.ed1daf0bf**, GodotPhysics3D at 120 Hz, Compatibility/OpenGL renderer. Base `cb76c23` was fetched from main and all 256 existing checks passed before edits.
 
@@ -140,7 +143,7 @@ A short rendering probe used **GTX 1060 6 GB, driver 582.78, Windows OpenGL Comp
 
 The difference is within short-run noise, **not proof that a second camera is free**. This is one small scene, one machine, equal total pixels and a brief synthetic workload, not an isolated GPU benchmark or long-session frame-pacing guarantee. Higher resolutions, other GPUs, real two-person combat and resize/respawn/restart hitches still need observation. No paid profiler/services, new assets, CI artifacts or caches were used.
 
-### Required human Windows acceptance
+### Historical v0.10 manual checklist (unverified cases retained)
 
 **October 30 audio follow-up:** user heard only the win cue. A graphical `AudioEffectCapture` on the Master bus confirmed zero spatial output with the root listener, while the centered victory cue peaked at 0.076070. Hosting the midpoint listener in the first camera-bearing SubViewport and enabling 3D audio only there restores spatial output without increasing gain. The multiplayer topology assertion now checks that exact listener/view/camera relationship. Existing signal-dispatch and `.playing` checks could not detect this routing failure.
 
@@ -152,7 +155,7 @@ godot --path . --script res://tests/audio_output_smoke.gd
 
 All **15 output checks pass** on the existing Godot 4.7.2 / Windows Compatibility renderer. Both real weapon events produce nonzero mixer frames at their authored starts (peak ~0.0151); ten spatial gameplay cues at the listener produce peaks ~0.0293–0.0662; mute produces silent frames; winner output and spatial firing after scene reload pass. The script has a 30-second timeout, returns nonzero on failure, and rejects headless/dummy audio drivers. These are engine mixer measurements, not physical speaker or human loudness/quality acceptance. The 326 headless behavior checks and separate AI soak remain the normal CI suite; this optional graphical check requires a real audio driver.
 
-**October 30 camera follow-up:** user reported other gameplay looked/felt good but the camera was too far back/stretched. Local framing now uses 6.5 / 2.4 / 0.55 m distance/height/focus, 110–115° **horizontal** FOV (previously ~141–147° horizontal via the vertical lens). The existing multiplayer camera check now verifies that profile and independent speed response. Real Windows captures inspect both full cars at rest, both at ~112 km/h (113.53° horizontal FOV), and resized layout: [before](images/local-camera-before.png), [after](images/local-duel.png), [moving](images/local-camera-speed.png), [resized](images/local-resized.png). Own floating nameplates are excluded from only their own camera; HUD identity remains and opponents still see labels. Earlier collision/respawn/result images and performance measurements above predate this framing change. Human camera recheck and merge remain pending; positive feedback elsewhere is not merge approval.
+**October 30 camera follow-up:** user reported other gameplay looked/felt good but the camera was too far back/stretched. Local framing now uses 6.5 / 2.4 / 0.55 m distance/height/focus, 110–115° **horizontal** FOV (previously ~141–147° horizontal via the vertical lens). The existing multiplayer camera check now verifies that profile and independent speed response. Real Windows captures inspect both full cars at rest, both at ~112 km/h (113.53° horizontal FOV), and resized layout: [before](images/local-camera-before.png), [after](images/local-duel.png), [moving](images/local-camera-speed.png), [resized](images/local-resized.png). Own floating nameplates are excluded from only their own camera; HUD identity remains and opponents still see labels. Earlier collision/respawn/result images and performance measurements above predate this framing change. This camera profile and the audio fix were subsequently merged in PR #13 at 61c6b35. The fixtures do not independently verify unrecorded physical-device scenarios.
 
 - [ ] Keyboard/mouse P1 + one physical pad P2: every control, simultaneous driving/fire and no cross-control.
 - [ ] Two separate pads: F2 setup, correct device slots, analog ranges/deadzones and independent handbrake/recovery/switching.
@@ -162,3 +165,57 @@ All **15 output checks pass** on the existing Godot 4.7.2 / Windows Compatibilit
 - [ ] Listen to shared-speaker audio, verify mute from either participant and session persistence. No per-player headphone mix/occlusion is claimed.
 - [ ] Resize/fullscreen and watch active combat, high speed, maximum sparks, respawn and restart for frame-time spikes. The probe is not human performance acceptance.
 - [ ] Revisit AI duel and training interactively to confirm approved v0.9 feel remains intact.
+
+
+## v0.11 Destruction Lab validation
+
+**Base verified before edits:** latest main `61c6b35` (v0.10, PR #13); existing Windows Godot **4.7.2.stable.official.ed1daf0bf**. All **326 behavior checks plus the 60 s AI soak passed before implementation**. Final v0.10 feature-head [CI 41121372903](https://github.com/FoxyLight/Crash-Lab/actions/runs/41121372903) on `9522111` was separately verified successful.
+
+**Final local runner:** editor import, default startup and **395 behavior checks** = 326 existing + **69 destruction**, plus the separate 60 s soak; all twelve suites pass with no reported script/runtime errors. The new suite uses fixed 120 Hz steps and a 180-second simulated watchdog; failures return nonzero. Two existing scene-count assertions now count rigid-body **chassis with DriverInput**, checking both expected actor references, rather than treating destructible rigid bodies as extra vehicles. Participant count, absence of AI/turret, and all gameplay assertions remain strict; no thresholds were reduced.
+
+Physical evidence includes actual 55 m/s crate ram (one major event, final speed **48.15 m/s**, upright, no health loss), gentle approach blocked by intact cover, powered resting contact, tangential scrape, separated repeated rams, heavy barrier destruction and driving through its opening. Actual swept projectiles test 20/80 damage, single-hit delivery, shooter identity, intact shielding and the destroyed opening, including a 20,000 m/s no-tunnel sweep. Rapid destruction reaches **64** non-solid fragments and expires completely. Existing 55 Impact Lab checks still pass.
+
+Hazard checks cover visible fuse before damage, one detonation, linear range falloff, outside-radius safety, solid-cover shielding, spawn protection, a physical ram with no shooter credit, real projectile-triggered opponent/self/unknown kills, no stale attacker on respawn, and no AI legacy fallback for source-aware null damage. Finish cancels a pending fuse; repeated finished-match reloads restore intact props and one audio connection. Both shared views reference the same destroyed object; one barrier destruction dispatches one sound. All three arenas load and start with clear vehicle spawns. The 30 s new AI check drives, stays upright and fires; the unchanged 60 s soak still records **149.65 m, 7200/7200 upright frames, zero resets, 13 shots, one player death, score 0–1**.
+
+### Real Windows renders and audio
+
+Run `godot --path . --script res://tests/destruction_render_probe.gd -- --capture` without headless or fixed FPS. This reproducible scripted fixture uses the production reset path, real physical ramming, and mounted cannon/blaster shots. Captures are actual engine output, **not human playtest evidence**:
+
+| Evidence | Image |
+| --- | --- |
+| Intact banded crates | [Intact](images/destruction-intact.png) |
+| Actual vehicle ram and breakup (30 m/s approach, ~27.82 m/s at capture) | [Ram](images/destruction-ram.png) |
+| Two mounted cannon shots open a 140-durability barrier | [Weapon destruction](images/destruction-weapon.png) |
+| Canister fuse and visible 12 m warning ring | [Warning](images/destruction-hazard-warning.png) |
+| Short blast, non-solid shards and accepted player damage (~92.94 HP remaining at 10 m) | [Explosion](images/destruction-hazard.png) |
+| One destroyed barrier and eight fragments rendered by both cameras | [Shared destruction](images/destruction-shared.png) |
+
+A separate graphical `tests/audio_output_smoke.gd` passes **18 real-mixer checks**, including the three new wood/barrier/blast cues, both weapon events, mute, winner and scene reload. This verifies non-silent Master-bus PCM, not physical speaker volume or human sound quality. Training also launches graphically. Three rendered finished-match restarts return two views, seven intact props and zero debris. A single real blast near both humans leaves each at **~70.03 HP**, with detonation count one.
+
+### Before/after performance observations
+
+Same PC, existing Windows Compatibility/OpenGL renderer, **GTX 1060 6 GB / driver 582.78**, 1280×720 root window. The same probe script ran by absolute path against detached baseline `61c6b35` and then the feature tree. Vsync and frame cap disabled only in the probe process; normal project settings unchanged. Each arena warms for **2 wall-clock seconds**, then each phase samples **3 seconds** (553–556 rendered frames). No other Godot check ran concurrently. Both local actors drive/fire; the feature stress creates rapid destruction and reaches 64 fragments. Baseline stress rows are matched driving/firing controls **without destruction**, because that system did not exist.
+
+| Scenario | Baseline mean / p95 / p99 ms | v0.11 mean / p95 / p99 ms | Feature peak debris | Feature peak reported physics ms |
+| --- | --- | --- | ---: | ---: |
+| AI duel, intact | 5.401 / 5.620 / 5.719 | 5.405 / 5.633 / 5.861 | 0 | 0.874 |
+| AI duel, rapid breakup (baseline control) | 5.413 / 5.625 / 5.724 | 5.428 / 5.679 / 5.927 | 64 | 2.453 |
+| Split driving/firing | 5.399 / 5.615 / 5.728 | 5.420 / 5.620 / 5.803 | 0 | 1.388 |
+| Split debris stress (baseline control) | 5.398 / 5.639 / 5.850 | 5.399 / 5.650 / 5.869 | 64 | 3.077 |
+| Blast near both humans (feature only) | — | 5.411 / 5.641 / 5.757 | 16 | 1.933 |
+
+Differences are short-run noise on this machine, not evidence of free destruction or a 120 Hz guarantee on other hardware. Peak physics is the sampled Godot Performance counter, not an instrumented worst-case tick. An earlier pass with only 0.8 s warmup reported a **257 ms startup-contaminated physics counter**, despite steady rendered frames; the matched 2 s warmup above avoids treating startup/resource construction as steady gameplay. Cold start and long-session resize/respawn spikes are not exhaustively profiled. Fragment simplification to non-solid meshes avoids suspension/query clutter and persistent rigid-body cost. No paid tools, runner, cache or artifact uploads are used.
+
+Hosted v0.11 implementation head `5568d76` passes [run 41213550622](https://github.com/FoxyLight/Crash-Lab/actions/runs/41213550622) in [PR #14](https://github.com/FoxyLight/Crash-Lab/pull/14), confirming all 395 checks plus the soak on Linux. Documentation-only follow-ups receive their own check; consult the exact current PR head. The workflow adds only the destruction suite/name, retaining public-only `ubuntu-24.04`, read-only permissions, bounded execution and no artifacts/caches. Repository visibility and the official [free standard public-runner policy](https://docs.github.com/en/billing/concepts/product-billing/github-actions) were rechecked October 31; billing settings were not changed.
+
+### Remaining v0.11 human Windows acceptance
+
+- [ ] Keyboard/controller: meaningful crate rams feel rewarding, gentle pushing/scraping stays readable, no dead stop/flip or change to approved handling/cameras.
+- [ ] Both weapons open useful cover routes; intact boundaries remain readable and spawn/repair approaches safe.
+- [ ] Hazard warning, falloff, shielding and single-use state are understandable, fair and tactically useful in AI and two-person matches.
+- [ ] Both split views show the same breakup without obscuring aim; shared audio/mute is balanced on real speakers/headphones.
+- [ ] Repeat both players' deaths, protected/blocked/alternate respawns, full matches and restarts; arena stays broken until restart.
+- [ ] Play longer stress sessions with both participants firing, resize/fullscreen and maximum debris; observe frame pacing on target hardware.
+- [ ] Revisit runway, ramps, handling/firing/repair practice and AI behavior. Existing automated input inventories do not replace physical device/hotplug tests.
+
+Known limits: primitive geometry and damage darkening, zero-width projectile sweeps, conservative static-world blast shielding, linear damage falloff, frozen barriers, non-solid ballistic shards with a simple floor bounce, fixed sparse layout, no chain reactions or procedural fracture. Training props reset on scene reload. Ramming a canister is environmental; only the accepted projectile that depletes durability supplies source credit. Human acceptance and merge remain pending for **v0.11**.

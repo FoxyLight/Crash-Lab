@@ -115,5 +115,5 @@ func _show_result(result: int) -> void:
 
 func _process(_delta: float) -> void:
 	var router = $InputRouter
-	banner.text = "CRASH LAB v0.10  |  %s  |  F2: Change setup  |  M / D-pad down: Audio %s" % ["Two controllers" if router.two_gamepads else "Keyboard + controller", "OFF" if $CombatAudio.session_muted else "ON"]
+	banner.text = "CRASH LAB v0.11  |  %s  |  F2: Change setup  |  M / D-pad down: Audio %s" % ["Two controllers" if router.two_gamepads else "Keyboard + controller", "OFF" if $CombatAudio.session_muted else "ON"]
 	listener.global_position = (players[0].global_position + players[1].global_position) * 0.5 + Vector3.UP * 2.0

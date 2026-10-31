@@ -1,0 +1,8 @@
+[gd_scene load_steps=2 format=3]
+[ext_resource type="Script" path="res://scripts/destruction/destructible_prop.gd" id="1"]
+[node name="Barrier" type="RigidBody3D"]
+script = ExtResource("1")
+kind = 1
+maximum_durability = 140.0
+dimensions = Vector3(8, 2.4, 1)
+body_color = Color(0.35, 0.52, 0.58, 1)
