@@ -18,7 +18,7 @@ The canister detonates once for at most **45 HP**, falling linearly to zero at 1
 
 Breaking removes collision, darkens/hides intact geometry and produces up to eight non-solid ballistic shards. One manager limits the shared world to **64 fragments**, each lasting **2.5 s**; fragments cannot obstruct suspension, bullets or respawns. One simulation and one spatial audio event serve both views. Wood, barrier and blast cues use the existing bounded audio pools/mute route. Props stay broken across player respawns. Finished-match restart rebuilds the arena; finish cancels pending blasts and clears debris.
 
-Validation: **394 behavior checks** (326 existing + 68 destruction), separate 60 s AI soak and **18 real-mixer checks** pass locally. See [validation, screenshots and performance](docs/TESTING.md#v011-destruction-lab-validation). Human Windows/controller checks remain necessary for crate-smashing feel, cover tactics, warning readability, sound balance and sustained split-screen frame pacing.
+Validation: **395 behavior checks** (326 existing + 69 destruction), separate 60 s AI soak and **18 real-mixer checks** pass locally. See [validation, screenshots and performance](docs/TESTING.md#v011-destruction-lab-validation). Human Windows/controller checks remain necessary for crate-smashing feel, cover tactics, warning readability, sound balance and sustained split-screen frame pacing.
 
 ## Two-player local duel
 

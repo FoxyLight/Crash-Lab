@@ -20,9 +20,14 @@ func run() -> void:
 	shot(20, Vector3(0, 1, 6), Vector3(0, 0, -110), car)
 	await ticks(12)
 	check(prop.durability == 20 and not prop.is_destroyed, "real blaster-speed sweep damages crate once")
+	prop.durability_changed.connect(func(current, _maximum):
+		if current <= 0:
+			prop.take_damage(1000)
+	)
 	shot(80, Vector3(0, 1, 6), Vector3(0, 0, -65), car)
 	await ticks(18)
 	check(prop.is_destroyed and breaks == 1 and prop.last_source.get_ref() == car, "cannon destroys weakened crate with preserved shooter identity")
+	check(prop.durability == 0 and breaks == 1, "reentrant durability observer cannot repeat the destruction transition")
 	prop.take_damage(1000)
 	check(breaks == 1, "destroyed prop ignores duplicate damage")
 	check(prop.collision_layer == 0 and prop.collider.disabled, "destroyed crate removes solid and projectile collision")

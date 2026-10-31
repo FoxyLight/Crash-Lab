@@ -86,9 +86,10 @@ func take_damage_from(amount: float, source: Node) -> void:
 	last_source = weakref(source) if is_instance_valid(source) else null
 	material.albedo_color = body_color.lerp(Color("3a2720"), 0.65 * (1.0 - durability / maximum_durability))
 	_update_label()
-	durability_changed.emit(durability, maximum_durability)
 	if durability <= 0.0 and not is_destroyed:
 		_break(source)
+	# A depleted prop must enter its guarded transition before external callbacks.
+	durability_changed.emit(durability, maximum_durability)
 
 func receive_vehicle_impact(data: Dictionary) -> void:
 	# ImpactDetector supplies the strongest physical normal closing speed, not

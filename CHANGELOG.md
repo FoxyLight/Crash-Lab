@@ -10,7 +10,7 @@ Changes are grouped by prototype milestone. Versions are **development milestone
 - Add one 0.8-second telegraphed, 12 m / maximum 45 HP falloff blast, cover shielding, protection/finish gates and explicit projectile-source credit. Source-aware unknown environmental deaths receive no legacy AI fallback points; one-argument legacy APIs remain compatible.
 - Add shared non-solid ballistic debris: eight pieces per break, 64 global, 2.5-second lifetime, finish/restart cleanup. Add three procedural destruction cues through the existing shared spatial route.
 - Add deterministic physical destruction tests, graphical/audio output checks, screenshots and before/after Windows measurements. Add the suite to existing public-only free CI without changing runner, guard, permissions, timeout or artifact/cache policy.
-- Local validation passes 394 behavior checks (326 existing + 68 destruction), AI soak and 18 graphical real-mixer checks; bounded debris stress reaches 64, with warmed ~5.4 ms mean rendered frames on the inspected PC. Human v0.11 feel/balance acceptance remains pending.
+- Local validation passes 395 behavior checks (326 existing + 69 destruction), AI soak and 18 graphical real-mixer checks; bounded debris stress reaches 64, with warmed ~5.4 ms mean rendered frames on the inspected PC. Human v0.11 feel/balance acceptance remains pending.
 - Audit all seven project documents: v0.10 is merged at `61c6b35`; retain historical evidence and distinguish unverified device/manual scenarios.
 
 ## v0.10 — Local Multiplayer (merged at `61c6b35`, PR #13)
